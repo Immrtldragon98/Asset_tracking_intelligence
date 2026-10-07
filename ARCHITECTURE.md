@@ -1,39 +1,57 @@
-# Digital Stand Register — Clean Architecture
+# Asset Tracking Intelligence — Architecture
 
-## Frontend
-- `frontend/app/` — Next.js routes/screens
-- `frontend/components/` — reusable UI grouped by feature
-- `frontend/hooks/` — frontend hooks
-- `frontend/lib/` — API client and utilities
-- `frontend/store/` — client state
+## Platform
+
+Asset Tracking Intelligence is the platform. Registers are domain views over a common asset intelligence core:
+
+- DSIR — Digital Stand Intelligent Register
+- RMIR — Roughing Mill Intelligent Register
+- MIR — Motor Intelligent Register
+- DIR — Drive Intelligent Register
+- SSIR — Screw Shaft Intelligent Register
+
+## Common asset model
+
+The asset_registry table provides reusable identity:
+
+- asset code/name and type
+- register/module
+- plant, equipment, area and position
+- manufacturer/model
+- installation date
+- status/location
+- operating and lifetime hours
+- criticality and notes
+- parent/child relationship
+
+## Roughing Mill relationship
+
+Roughing Mill -> Stand -> Gearbox / Floating Shaft / Coupler / Motor / Drive / Screw Shaft
+
+The parent/child model is generic so later equipment can be attached without creating a new schema for every machine.
 
 ## Backend
-- `backend/app/api/routes/` — HTTP endpoints only
-- `backend/app/services/` — business rules/workflows
-- `backend/app/repositories/` — database queries
-- `backend/app/models/` — SQLAlchemy persistence models
-- `backend/app/schemas/` — API request/response schemas
-- `backend/app/auth/` — authentication/security
-- `backend/app/config/` — application settings
-- `backend/app/database/` — DB session/base
-- `backend/alembic/` — schema migrations
 
-## Main domain flow
-`Route -> Service -> Repository -> Model/Database`
+Route -> Service/Repository -> Model -> PostgreSQL
 
-Frontend pages should call backend APIs through `frontend/lib/api.ts` rather than embedding database/business logic.
+The existing FastAPI, SQLAlchemy and Alembic DSIR stack is retained. The Asset Intelligence Core is exposed under /api/v1/assets.
 
-## Domain modules retained
-- Dashboard / live line status
-- Stand assets and stand life
-- Stand changes / operations
-- Entry guide tracking
-- Activity audit trail
-- Reports / Excel export
+## Frontend
 
-### Inventory audit model
-`inventory_items` stores the current balance and active/archive state. `inventory_transactions` is append-only history for every stock movement. Quantity edits must go through `/inventory/{id}/quantity` or `/inventory/{id}/set-quantity`; normal item edits do not directly change stock.
+The home page is now the plant-wide register selector. Existing DSIR screens remain available at /stand-area and existing operations/history/intelligence routes remain intact.
 
-## Initial data integrity
+Generic register screens are available at /asset-intelligence/{module}.
 
-`backend/app/seed/snapshot_20260822.py` is the single source of truth for the first plant snapshot. `backend/scripts/seed_20260822.py` performs an idempotent import after migrations. It does not fabricate missing asset codes. Automated tests verify three complete running lines, no running/spare overlap, duplicate Ready priority, and the four-asset gap in the supplied report.
+## Intelligence direction
+
+The future assistant should use controlled tools over the shared model:
+
+- get asset
+- get parent/children
+- get maintenance history
+- get events/failures
+- get life
+- compare assets
+- investigate equipment relationship
+
+LLMs must not write directly to the database. The existing validation/human-confirmation pattern remains the write boundary.
