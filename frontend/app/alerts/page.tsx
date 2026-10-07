@@ -1,0 +1,4 @@
+"use client";
+import Header from "@/components/layout/Header";
+import { AlertTriangle } from "lucide-react";
+export default function AlertsPage(){return <div className="dsr-page"><Header title="Alerts"/><main className="dsr-main"><div className="full-bleed"><section className="mechanical-panel p-5"><div className="flex items-start gap-3"><AlertTriangle className="w-5 h-5 text-amber-300 mt-0.5"/><div><div className="dsr-kicker">DSIR · Finishing Mill</div><h1 className="dsr-title mt-1">Alerts</h1><p className="dsr-subtitle mt-2">Running-stand condition alerts will be consolidated here from vibration, leakage, abnormal sound, breakdown and other recorded events.</p></div></div></section></div></main></div>}
