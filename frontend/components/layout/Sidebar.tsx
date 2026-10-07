@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Home, Wrench, Factory, Package, History, Users, LogIn, LogOut, ClipboardPaste, Database, BrainCircuit, ChevronDown, ChevronRight, FileText, Menu, X, Settings2, ServerCog, CalendarDays, Cpu, Zap, Cog } from "lucide-react";
+import { Home, Gauge, Wrench, Factory, Package, History, Users, LogIn, LogOut, ClipboardPaste, Database, BrainCircuit, ChevronDown, ChevronRight, FileText, Menu, X, Settings2, ServerCog, CalendarDays, Cpu, Zap, Cog } from "lucide-react";
 import { AuthUser, clearSession, getUser, isAdmin } from "@/lib/auth";
 
 export default function Sidebar(){
