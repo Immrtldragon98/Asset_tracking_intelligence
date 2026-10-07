@@ -10,7 +10,12 @@ COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY backend/ .
-RUN chmod +x /app/docker-entrypoint.sh
+# Keep the Alembic migration directory explicit so the database revisions
+# required by the live database are always present in the runtime image.
+COPY backend/alembic/versions/ /app/alembic/versions/
+
+RUN test -f /app/alembic/versions/20260913_pm_activity_log.py \
+    && chmod +x /app/docker-entrypoint.sh
 
 EXPOSE 8000
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
