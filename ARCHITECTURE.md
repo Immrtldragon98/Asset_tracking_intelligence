@@ -26,7 +26,9 @@ The asset_registry table provides reusable identity:
 
 ## Roughing Mill relationship
 
-Roughing Mill -> Stand -> Gearbox / Floating Shaft / Coupler / Motor / Drive / Screw Shaft
+Roughing Mill -> Stand -> Gearbox / Entry Guide / Motor / Floating Shaft / Coupler (GB Side) / Coupler (Motor Side)
+
+MIR and SSIR will later expose richer subtrees: Motor -> Bearings / Coupler / Sensors, and Screw Shaft -> Bearing 1 / Bearing 2. DIR equipment will be added when the plant list is provided.
 
 The parent/child model is generic so later equipment can be attached without creating a new schema for every machine.
 
@@ -52,6 +54,8 @@ The future assistant should use controlled tools over the shared model:
 - get events/failures
 - get life
 - compare assets
+- get asset relationship tree
 - investigate equipment relationship
+- compare positions and connected equipment
 
 LLMs must not write directly to the database. The existing validation/human-confirmation pattern remains the write boundary.
