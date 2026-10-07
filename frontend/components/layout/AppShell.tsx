@@ -3,20 +3,43 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 
-const DSIR_PATHS=[
-  "/running-stands","/stand-area","/operations","/pm-schedule","/inventory","/activity","/entry-guides",
-  "/reports","/import-report","/historical-import","/users","/planning","/system-status",
-  "/intelligence","/investigation","/knowledge","/login"
+const DSIR_PATHS = [
+  "/dsir",
+  "/running-stands",
+  "/stand-area",
+  "/operations",
+  "/pm-schedule",
+  "/inventory",
+  "/activity",
+  "/entry-guides",
+  "/reports",
+  "/import-report",
+  "/historical-import",
+  "/planning",
+  "/system-status",
+  "/intelligence",
+  "/investigation",
+  "/knowledge",
+  "/alerts",
+  "/users",
 ];
 
-export default function AppShell({children}:{children:React.ReactNode}){
-  const pathname=usePathname();
-  const showDSIRNavigation=DSIR_PATHS.some(p=>pathname===p||pathname.startsWith(p+"/"));
-  const showRMIRNavigation=pathname==="/rmir"||pathname.startsWith("/rmir/");
-  const showMIRNavigation=pathname==="/mir"||pathname.startsWith("/mir/");
-  const showDIRNavigation=pathname==="/dir"||pathname.startsWith("/dir/");
-  const showSSIRNavigation=pathname==="/ssir"||pathname.startsWith("/ssir/");
-  return (showDSIRNavigation||showRMIRNavigation||showMIRNavigation||showDIRNavigation||showSSIRNavigation)
-    ? <div className="flex min-h-screen"><Sidebar/><div className="flex-1 min-w-0">{children}</div></div>
-    : <div className="min-h-screen">{children}</div>;
+const matches = (pathname: string, path: string) =>
+  pathname === path || pathname.startsWith(path + "/");
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  const showNavigation =
+    DSIR_PATHS.some((path) => matches(pathname, path)) ||
+    ["/rmir", "/mir", "/dir", "/ssir"].some((path) => matches(pathname, path));
+
+  return showNavigation ? (
+    <div className="min-h-screen">
+      <Sidebar />
+      <main className="app-shell-content">{children}</main>
+    </div>
+  ) : (
+    <div className="min-h-screen">{children}</div>
+  );
 }
