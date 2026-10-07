@@ -68,6 +68,7 @@ def get_module_assets(module_code: str, db: Session = Depends(get_db)):
                 "parent_id": a.parent_id,
                 "operating_hours": a.operating_hours,
                 "lifetime_hours": a.lifetime_hours,
+                "is_running": str(a.status).upper() in {"ACTIVE","RUNNING","INSTALLED","IN_SERVICE","OPERATIONAL","COMMISSIONED"},
             }
             for a in assets
         ],
