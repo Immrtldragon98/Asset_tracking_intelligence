@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Activity, ArrowLeft, CheckCircle2, Circle, Cog, Gauge, RefreshCw, Settings2, Wrench, Zap } from "lucide-react";
 import { fetchApi } from "@/lib/api";
 
-type Asset={id:number;asset_code:string;name:string;asset_type:string;position:string|null;status:string;installation_date:string|null;parent_id:number|null;operating_hours:number;lifetime_hours:number};
+type Asset={id:number;asset_code:string;name:string;asset_type:string;position:string|null;status:string;installation_date:string|null;parent_id:number|null;operating_hours:number;lifetime_hours:number;is_running?:boolean};
 
 const componentOrder=[
  {key:"GEARBOX",label:"Gearbox",short:"GB",icon:Cog},
@@ -15,7 +15,7 @@ const componentOrder=[
  {key:"MOTOR",label:"Motor",short:"Motor",icon:Zap},
 ];
 
-function isRunning(a?:Asset){return !!a && ["ACTIVE","RUNNING","INSTALLED"].includes(String(a.status).toUpperCase());}
+function isRunning(a?:Asset){return !!a && (a.is_running ?? ["ACTIVE","RUNNING","INSTALLED","IN_SERVICE","OPERATIONAL","COMMISSIONED"].includes(String(a.status).toUpperCase()));}
 function statusLabel(a?:Asset){return isRunning(a)?"RUNNING":a?.status||"NOT ENTERED";}
 function dateLabel(v:string|null){if(!v)return "Date not entered";const d=new Date(v);return Number.isNaN(d.getTime())?"Date not entered":d.toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"});}
 
