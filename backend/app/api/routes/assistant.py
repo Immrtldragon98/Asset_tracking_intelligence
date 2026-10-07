@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
+import os
 
-from app.services.grok_ai import ask_grok
+from app.services.grok_ai import ask_groq
 
 router = APIRouter()
 
@@ -15,8 +16,8 @@ class AssistantResponse(BaseModel):
 
 @router.post("/chat", response_model=AssistantResponse)
 def chat(request: AssistantRequest):
-    import os
+    model = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     return {
-        "answer": ask_grok(request.question, request.context),
-        "model": os.getenv("XAI_MODEL", "grok-4.7"),
+        "answer": ask_groq(request.question, request.context),
+        "model": model,
     }
