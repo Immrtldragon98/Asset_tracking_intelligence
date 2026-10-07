@@ -6,7 +6,7 @@ import { fetchApi } from "@/lib/api";
 import { Activity, ArrowRight, BrainCircuit, Cog, Cpu, Factory, Gauge, RefreshCw, Wrench, Zap } from "lucide-react";
 
 type Module={code:string;name:string;short_name:string;area:string;description:string}; type Overview={total_assets:number;active_assets:number;high_criticality_assets:number;module_counts:Record<string,number>};
-const moduleMeta:Record<string,{icon:any;href:string}>={DSIR:{icon:Factory,href:"/stand-area"},RMIR:{icon:Cog,href:"/asset-intelligence/RMIR"},MIR:{icon:Cpu,href:"/asset-intelligence/MIR"},DIR:{icon:Zap,href:"/asset-intelligence/DIR"},SSIR:{icon:Wrench,href:"/asset-intelligence/SSIR"}};
+const moduleMeta:Record<string,{icon:any;href:string}>={DSIR:{icon:Factory,href:"/dsir"},RMIR:{icon:Cog,href:"/rmir"},MIR:{icon:Cpu,href:"/mir"},DIR:{icon:Zap,href:"/dir"},SSIR:{icon:Wrench,href:"/ssir"}};
 
 export default function DashboardPage(){
  const [modules,setModules]=useState<Module[]>([]),[overview,setOverview]=useState<Overview|null>(null),[error,setError]=useState<string|null>(null),[loading,setLoading]=useState(true);
