@@ -15,11 +15,47 @@ export default function Sidebar(){
  const mir=[{name:"Running Status",href:"/mir",icon:Gauge},{name:"Issues",href:"/mir/issues",icon:Zap},{name:"Maintenance Data",href:"/mir/maintenance",icon:CalendarDays},{name:"AI / Intelligence",href:"/mir/intelligence",icon:BrainCircuit},{name:"History",href:"/mir/history",icon:History}];
  const dir=[{name:"Running Status",href:"/dir",icon:Gauge},{name:"Alerts",href:"/dir/alerts",icon:Zap},{name:"Maintenance Data",href:"/dir/maintenance",icon:CalendarDays},{name:"History",href:"/dir/history",icon:History}];
  const ssir=[{name:"Running Status",href:"/ssir",icon:Gauge},{name:"Alerts",href:"/ssir/alerts",icon:Zap},{name:"Maintenance Data",href:"/ssir/maintenance",icon:CalendarDays},{name:"AI / Intelligence",href:"/ssir/intelligence",icon:BrainCircuit},{name:"History",href:"/ssir/history",icon:History}];
- const manage=pathname.startsWith("/rmir")?rmir:pathname.startsWith("/mir")?mir:pathname.startsWith("/dir")?dir:pathname.startsWith("/ssir")?ssir:dsir;
- const moduleLabel=pathname.startsWith("/rmir")?"RMIR · Roughing Mill":pathname.startsWith("/mir")?"MIR · Motors":pathname.startsWith("/dir")?"DIR · Drives":pathname.startsWith("/ssir")?"SSIR · Screw Shafts":"DSIR · Finishing Mill";
+ const module=pathname.startsWith("/rmir")?"RMIR":pathname.startsWith("/mir")?"MIR":pathname.startsWith("/dir")?"DIR":pathname.startsWith("/ssir")?"SSIR":"DSIR";
+ const groups:any=module==="DSIR"?[
+  {name:"Overview",items:[{name:"Stand Overview",href:"/stand-area",icon:Factory},{name:"Running Stands",href:"/running-stands",icon:Gauge},{name:"Alerts",href:"/alerts",icon:Zap}]},
+  {name:"Operations",items:[{name:"Stand Change",href:"/operations",icon:Wrench},{name:"Entry Guide Change",href:"/entry-guides",icon:Settings2}]},
+  {name:"Maintenance",items:[{name:"Maintenance Data",href:"/pm-schedule",icon:CalendarDays},{name:"Spare Life",href:"/inventory",icon:Package}]},
+  {name:"Intelligence",items:[{name:"AI / Intelligence",href:"/intelligence",icon:BrainCircuit},{name:"Investigation",href:"/investigation",icon:Zap}]},
+  {name:"History",items:[{name:"Activity History",href:"/activity",icon:History},{name:"Export History",href:"/reports",icon:FileText},{name:"Import Report",href:"/import-report",icon:ClipboardPaste},{name:"Historical Data",href:"/historical-import",icon:Database}]}
+ ]:module==="RMIR"?[
+  {name:"Overview",items:[{name:"Running Stands",href:"/rmir",icon:Gauge},{name:"Stand Area",href:"/rmir/stand-area",icon:Factory}]},
+  {name:"Operations",items:[{name:"Stand Change",href:"/rmir/stand-change",icon:Wrench},{name:"Entry Guide Change",href:"/rmir/entry-guide-change",icon:Settings2}]},
+  {name:"Maintenance",items:[{name:"Maintenance Data",href:"/rmir/maintenance",icon:CalendarDays},{name:"Spare Life",href:"/rmir/spare-life",icon:Package}]},
+  {name:"Intelligence",items:[{name:"AI / Intelligence",href:"/rmir/intelligence",icon:BrainCircuit}]},
+  {name:"History",items:[{name:"History",href:"/rmir/history",icon:History}]}
+ ]:module==="MIR"?[
+  {name:"Overview",items:[{name:"Running Status",href:"/mir",icon:Gauge}]},
+  {name:"Issues",items:[{name:"Vibration / Temperature / Torque",href:"/mir/issues",icon:Zap}]},
+  {name:"Maintenance",items:[{name:"Maintenance Data",href:"/mir/maintenance",icon:CalendarDays}]},
+  {name:"Intelligence",items:[{name:"AI / Intelligence",href:"/mir/intelligence",icon:BrainCircuit}]},
+  {name:"History",items:[{name:"History",href:"/mir/history",icon:History}]}
+ ]:module==="DIR"?[
+  {name:"Overview",items:[{name:"Running Status",href:"/dir",icon:Gauge}]},
+  {name:"Alerts",items:[{name:"Alerts",href:"/dir/alerts",icon:Zap}]},
+  {name:"Maintenance",items:[{name:"Maintenance Data",href:"/dir/maintenance",icon:CalendarDays}]},
+  {name:"History",items:[{name:"History",href:"/dir/history",icon:History}]}
+ ]:[
+  {name:"Overview",items:[{name:"Running Status",href:"/ssir",icon:Gauge}]},
+  {name:"Alerts",items:[{name:"Alerts",href:"/ssir/alerts",icon:Zap}]},
+  {name:"Maintenance",items:[{name:"Maintenance Data",href:"/ssir/maintenance",icon:CalendarDays}]},
+  {name:"Intelligence",items:[{name:"AI / Intelligence",href:"/ssir/intelligence",icon:BrainCircuit}]},
+  {name:"History",items:[{name:"History",href:"/ssir/history",icon:History}]}
+ ];
+ const moduleLabel=module==="RMIR"?"Roughing Mill":module==="MIR"?"Motors":module==="DIR"?"Drives":module==="SSIR"?"Screw Shafts":"Finishing Mill";
+ const [open,setOpen]=useState<string|null>(null);
  const active=(href:string)=>pathname===href||(href==="/intelligence"&&pathname==="/investigation");
- const item=(i:any)=>{const I=i.icon;return <Link key={i.href} href={i.href} className={`nav-item ${active(i.href)?"nav-item-active":""}`}><I className={`w-4 h-4 shrink-0 ${active(i.href)?"text-[#4EA1FF]":"text-slate-500"}`}/><span>{i.name}</span></Link>};
  const logout=()=>{clearSession();setUser(null);router.push("/dashboard")};
- const panel=<><div><div className="brand-lockup"><div className="brand-mark"><span/></div><div><div className="brand-title">Asset Tracking Intelligence</div><div className="brand-subtitle">Plant-wide maintenance</div></div></div><div className="nav-label">Platform</div><nav className="space-y-1">{primary.map(item)}</nav><div className="nav-label mt-5">{moduleLabel}</div><nav className="space-y-1">{manage.map(item)}</nav></div><div className="sidebar-account">{user?<><div className="px-2 mb-2"><div className="text-sm font-semibold text-slate-100">{user.username}</div><div className="text-xs text-slate-400">{user.role==="ADMIN"?"Administrator":"Operator"}</div></div><button onClick={logout} className="account-action"><LogOut className="w-4 h-4"/>Sign out</button></>:<Link href="/login" className="account-action text-sky-300"><LogIn className="w-4 h-4"/>Sign in to edit</Link>}</div></>;
- return <><aside className="desktop-sidebar">{panel}</aside><header className="mobile-topbar"><button aria-label="Open navigation" onClick={()=>setMobileOpen(true)} className="mobile-menu-btn"><Menu className="w-5 h-5"/></button><div><div className="text-sm font-semibold text-white">Asset Tracking Intelligence</div><div className="text-xs text-slate-400">Plant-wide maintenance</div></div></header>{mobileOpen&&<div className="mobile-nav-overlay" onClick={()=>setMobileOpen(false)}><aside className="mobile-drawer" onClick={e=>e.stopPropagation()}><button aria-label="Close navigation" onClick={()=>setMobileOpen(false)} className="drawer-close"><X className="w-5 h-5"/></button>{panel}</aside></div>}<nav className="mobile-bottom-nav">{primary.slice(0,6).map(i=>{const I=i.icon;return <Link key={i.href} href={i.href} className={`mobile-nav-item ${active(i.href)?"text-[#4EA1FF]":""}`}><I className="w-5 h-5"/><span>{i.name.split("·")[0].trim()}</span></Link>})}</nav></>;
+ const panel=<><div><div className="brand-lockup"><div className="brand-mark"><span/></div><div><div className="brand-title">Asset Tracking Intelligence</div><div className="brand-subtitle">Plant-wide maintenance</div></div></div><div className="nav-panel">
+  <div className="nav-panel-head"><div className="nav-label">{module} · {moduleLabel}</div><div className="nav-panel-hint">Select a workspace</div></div>
+  <div className="nav-groups">{groups.map((g:any)=><div key={g.name} className="nav-group"><button className="nav-group-btn" onClick={()=>setOpen(open===g.name?null:g.name)}><span>{g.name}</span><ChevronDown className={`w-4 h-4 transition ${open===g.name?"rotate-180":""}`}/></button>{open===g.name&&<div className="nav-dropdown">{g.items.map((i:any)=>{const I=i.icon;return <Link key={i.href} href={i.href} className={`nav-dropdown-item ${active(i.href)?"nav-dropdown-active":""}`}><I className="w-4 h-4"/><span>{i.name}</span></Link>})}</div>}</div>)}</div>
+ </div></div><div className="sidebar-account">{user?<button onClick={logout} className="account-action"><LogOut className="w-4 h-4"/>Sign out</button>:<Link href="/login" className="account-action text-sky-300"><LogIn className="w-4 h-4"/>Sign in</Link>}</div></> ;
+ return <><header className="app-topnav"><div className="app-topnav-inner"><Link href="/dashboard" className="app-brand"><div className="brand-mark"><span/></div><div><div className="brand-title">Asset Tracking Intelligence</div><div className="brand-subtitle">Plant-wide maintenance</div></div></Link><div className="desktop-module"><button className="module-switch-btn" onClick={()=>setOpen(open==="module"?null:"module")}><b>{module}</b><span>{moduleLabel}</span><ChevronDown className="w-4 h-4"/></button>{open==="module"&&<div className="module-dropdown">{[["DSIR","Finishing Mill","/dsir"],["RMIR","Roughing Mill","/rmir"],["MIR","Motors","/mir"],["DIR","Drives","/dir"],["SSIR","Screw Shafts","/ssir"]].map((m:any)=><Link key={m[0]} href={m[2]} className={`module-option ${module===m[0]?"module-option-active":""}`}><b>{m[0]}</b><small>{m[1]}</small></Link>)}</div>}</div><Link href="/dashboard" className="home-nav"><Home className="w-4 h-4"/>Platform</Link><div className="desktop-groups"><div className="nav-panel">
+  <div className="nav-panel-head"><div className="nav-label">{module} · {moduleLabel}</div><div className="nav-panel-hint">Select a workspace</div></div>
+  <div className="nav-groups">{groups.map((g:any)=><div key={g.name} className="nav-group"><button className="nav-group-btn" onClick={()=>setOpen(open===g.name?null:g.name)}><span>{g.name}</span><ChevronDown className={\`w-4 h-4 transition ${open===g.name?"rotate-180":""}\`}/></button>{open===g.name&&<div className="nav-dropdown">{g.items.map((i:any)=>{const I=i.icon;return <Link key={i.href} href={i.href} className={\`nav-dropdown-item ${active(i.href)?"nav-dropdown-active":""}\`}><I className="w-4 h-4"/><span>{i.name}</span></Link>})}</div>}</div>)}</div>
+ </div></div><div className="nav-account">{user?<button onClick={logout} className="account-action"><LogOut className="w-4 h-4"/>Sign out</button>:<Link href="/login" className="account-action"><LogIn className="w-4 h-4"/>Sign in</Link>}</div><button className="mobile-menu-btn" onClick={()=>setMobileOpen(true)} aria-label="Open navigation"><Menu className="w-5 h-5"/></button></div></header></>;
 }
