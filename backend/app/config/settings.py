@@ -12,6 +12,8 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+    XAI_API_KEY: str | None = os.getenv("XAI_API_KEY")
+    XAI_MODEL: str = os.getenv("XAI_MODEL", "grok-4.7")
 
     @property
     def cors_origins(self) -> list[str]:
