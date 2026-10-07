@@ -41,6 +41,41 @@ def get_asset_overview(db: Session = Depends(get_db)):
     }
 
 
+RUNNING_CONFIG = {
+    "DSIR": {
+        "module": "DSIR",
+        "area": "Finishing Mill",
+        "lines": {
+            "WRM1": ["1B", "2B", "3B", "4A", "5C", "6.1", "7B", "8B", "9D", "10C"],
+            "WRM2": ["1.1", "2.1", "3E", "4.1", "5B", "6A", "7A", "8E", "9", "10.1"],
+            "WRM3": ["1B", "2B", "3B", "4A", "5C", "6.1", "7B", "8B", "9D", "10C"],
+        },
+    },
+    "RMIR": {
+        "module": "RMIR",
+        "area": "Roughing Mill",
+        "lines": {
+            "WRM1": ["1A", "2A", "3A", "4A", "5A"],
+            "WRM2": ["1B", "2B", "3B", "4B", "5B"],
+            "WRM3": ["1C", "2C", "3C", "4C", "5C"],
+        },
+    },
+}
+
+
+@router.get("/running-config/{module_code}")
+def get_running_config(module_code: str):
+    code = module_code.upper()
+    config = RUNNING_CONFIG.get(code)
+    if not config:
+        return {"module": code, "area": None, "lines": {}, "total_running": 0}
+    return {
+        **config,
+        "total_running": sum(len(values) for values in config["lines"].values()),
+        "updated_at": "2026-10-08",
+    }
+
+
 @router.get("/{module_code}")
 def get_module_assets(module_code: str, db: Session = Depends(get_db)):
     code = module_code.upper()
