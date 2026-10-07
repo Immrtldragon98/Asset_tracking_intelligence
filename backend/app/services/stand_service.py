@@ -39,6 +39,7 @@ class StandService:
                 "current_position_id": stand.current_position_id,
                 "lifetime_hours": round((stand.lifetime_hours or 0.0) + current_campaign_hours, 2),
                 "current_campaign_hours": current_campaign_hours,
+                "is_running": active is not None,
                 "current_installed_at": active.installed_at if active else None,
                 "installed_by": active.installed_by if active else None,
                 "leakage": stand.leakage,
