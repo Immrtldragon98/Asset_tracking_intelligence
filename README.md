@@ -5,7 +5,7 @@ Plant-wide maintenance and asset intelligence platform. The original Digital Sta
 ## Registers
 
 - DSIR — Digital Stand Intelligent Register — Finishing Mill stands, campaigns, components, entry guides, life and reliability.
-- RMIR — Roughing Mill Intelligent Register — 5 roughing-mill stands and connected gearboxes, floating shafts, couplers, motors, drives and screw shafts.
+- RMIR — Roughing Mill Intelligent Register — 5 roughing-mill stands with gearbox, entry guide, motor, floating shaft and separate GB-side / motor-side couplers. Shared equipment such as screw shafts can later be represented through the common asset core and SSIR.
 - MIR — Motor Intelligent Register — plant-wide motor identity, maintenance, operating and failure history.
 - DIR — Drive Intelligent Register — plant-wide drive identity, trips, health, maintenance and failure history.
 - SSIR — Screw Shaft Intelligent Register — plant-wide screw-shaft lifecycle, maintenance, life and failure history.
@@ -16,13 +16,21 @@ The platform is not five separate applications. All registers use the same asset
 
 Example relationship:
 
-RM Stand 3 -> Gearbox 3 -> Floating Shaft 3 -> Coupler 3 -> Motor 3 -> Drive 3 -> Screw Shaft 3
+RM Stand 3
+├─ Gearbox 3
+├─ Entry Guide 3
+├─ Motor 3
+├─ Floating Shaft 3
+├─ Coupler 3 (GB Side)
+└─ Coupler 3 (Motor Side)
+
+Shared plant relationships are handled by the common asset core; MIR will later expand each motor into bearings, coupler and sensors, and SSIR will later expand each screw shaft into its two bearings.
 
 The current DSIR data model and workflows remain intact while new asset types are introduced through the common registry.
 
 ## RMIR baseline
 
-The migration creates 5 Roughing Mill stands and 5 each of gearboxes, floating shafts, couplers, motors, drives and screw shafts. It deliberately does not invent manufacturer, model, installation dates, operating hours or failure history.
+The RMIR baseline creates 5 Roughing Mill stands, each with a gearbox, entry guide, motor, floating shaft and two side-specific couplers. Existing baseline drive and screw-shaft identities are retained until DIR/MIR/SSIR equipment lists are supplied. It deliberately does not invent manufacturer, model, installation dates, operating hours or failure history.
 
 ## Existing DSIR capabilities retained
 
