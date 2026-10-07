@@ -20,20 +20,32 @@ class StandService:
         return round(max(0.0, (end - start).total_seconds() / 3600.0), 2)
 
     def get_all_stands(self):
-        return [
-            {
+        stands = self.stand_repo.get_all()
+        result = []
+        for stand in stands:
+            active = self.db.query(StandInstallation).filter(
+                StandInstallation.stand_id == stand.id,
+                StandInstallation.removed_at.is_(None),
+            ).first()
+            current_campaign_hours = (
+                self._hours(active.installed_at, datetime.utcnow())
+                if active else 0.0
+            )
+            result.append({
                 "id": stand.id,
                 "code": stand.code,
                 "current_location": stand.current_location,
                 "current_status": stand.current_status,
                 "current_position_id": stand.current_position_id,
-                "lifetime_hours": stand.lifetime_hours,
+                "lifetime_hours": round((stand.lifetime_hours or 0.0) + current_campaign_hours, 2),
+                "current_campaign_hours": current_campaign_hours,
+                "current_installed_at": active.installed_at if active else None,
+                "installed_by": active.installed_by if active else None,
                 "leakage": stand.leakage,
                 "vibration": stand.vibration,
                 "abnormal_sound": stand.abnormal_sound,
-            }
-            for stand in self.stand_repo.get_all()
-        ]
+            })
+        return result
 
     def get_stand_details(self, stand_id: int):
         stand = self.stand_repo.get_by_id(stand_id)
