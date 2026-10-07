@@ -63,6 +63,7 @@ def get_module_assets(module_code: str, db: Session = Depends(get_db)):
                 "asset_type": a.asset_type,
                 "position": a.position,
                 "status": a.status,
+                "installation_date": a.installation_date,
                 "criticality": a.criticality,
                 "parent_id": a.parent_id,
                 "operating_hours": a.operating_hours,
