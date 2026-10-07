@@ -13,7 +13,10 @@ export default function AppShell({children}:{children:React.ReactNode}){
   const pathname=usePathname();
   const showDSIRNavigation=DSIR_PATHS.some(p=>pathname===p||pathname.startsWith(p+"/"));
   const showRMIRNavigation=pathname==="/rmir"||pathname.startsWith("/rmir/");
-  return (showDSIRNavigation||showRMIRNavigation)
+  const showMIRNavigation=pathname==="/mir"||pathname.startsWith("/mir/");
+  const showDIRNavigation=pathname==="/dir"||pathname.startsWith("/dir/");
+  const showSSIRNavigation=pathname==="/ssir"||pathname.startsWith("/ssir/");
+  return (showDSIRNavigation||showRMIRNavigation||showMIRNavigation||showDIRNavigation||showSSIRNavigation)
     ? <div className="flex min-h-screen"><Sidebar/><div className="flex-1 min-w-0">{children}</div></div>
     : <div className="min-h-screen">{children}</div>;
 }
