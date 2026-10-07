@@ -1,44 +1,22 @@
 "use client";
-
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import Header from "@/components/layout/Header";
 import { fetchApi } from "@/lib/api";
 import { Activity, ArrowRight, BrainCircuit, Cog, Cpu, Factory, Gauge, RefreshCw, Wrench, Zap } from "lucide-react";
 
-type Module={code:string;name:string;short_name:string;area:string;description:string};
-type Overview={total_assets:number;active_assets:number;high_criticality_assets:number;module_counts:Record<string,number>};
-
-const moduleMeta:Record<string,{icon:any;href:string}> = {
- DSIR:{icon:Factory,href:"/stand-area"},
- RMIR:{icon:Cog,href:"/asset-intelligence/RMIR"},
- MIR:{icon:Cpu,href:"/asset-intelligence/MIR"},
- DIR:{icon:Zap,href:"/asset-intelligence/DIR"},
- SSIR:{icon:Wrench,href:"/asset-intelligence/SSIR"},
-};
+type Module={code:string;name:string;short_name:string;area:string;description:string}; type Overview={total_assets:number;active_assets:number;high_criticality_assets:number;module_counts:Record<string,number>};
+const moduleMeta:Record<string,{icon:any;href:string}>={DSIR:{icon:Factory,href:"/stand-area"},RMIR:{icon:Cog,href:"/asset-intelligence/RMIR"},MIR:{icon:Cpu,href:"/asset-intelligence/MIR"},DIR:{icon:Zap,href:"/asset-intelligence/DIR"},SSIR:{icon:Wrench,href:"/asset-intelligence/SSIR"}};
 
 export default function DashboardPage(){
- const [modules,setModules]=useState<Module[]>([]); const [overview,setOverview]=useState<Overview|null>(null); const [error,setError]=useState<string|null>(null); const [loading,setLoading]=useState(true);
- const load=async()=>{try{setError(null);const [m,o]=await Promise.all([fetchApi("/assets/modules"),fetchApi("/assets/overview")]);setModules(m);setOverview(o)}catch(e){setError(e instanceof Error?e.message:"Could not load asset platform")}finally{setLoading(false)}};
- useEffect(()=>{load()},[]);
+ const [modules,setModules]=useState<Module[]>([]),[overview,setOverview]=useState<Overview|null>(null),[error,setError]=useState<string|null>(null),[loading,setLoading]=useState(true);
+ const load=async()=>{try{setError(null);const [m,o]=await Promise.all([fetchApi("/assets/modules"),fetchApi("/assets/overview")]);setModules(m);setOverview(o)}catch(e){setError(e instanceof Error?e.message:"Could not load asset platform")}finally{setLoading(false)}}; useEffect(()=>{load()},[]);
  return <div className="flex-1 min-h-screen text-slate-100"><Header title="Asset Tracking Intelligence"/><main className="dsr-main full-bleed">
-  <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-5">
-   <div><div className="dsr-kicker">Plant-wide maintenance platform</div><h1 className="text-2xl md:text-3xl font-bold text-white mt-1">Asset Tracking Intelligence</h1><p className="page-subtitle mt-2 max-w-3xl">One asset intelligence core for equipment identity, lifecycle, maintenance, failure history and reliability — with DSIR as the first mature register.</p></div>
-   <button onClick={load} className="dsr-btn self-start"><RefreshCw className="w-4 h-4"/>Refresh</button>
-  </div>
+  <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-5"><div><div className="dsr-kicker">Plant-wide maintenance platform</div><h1 className="text-2xl md:text-3xl font-bold text-white mt-1">Asset Tracking Intelligence</h1><p className="page-subtitle mt-2 max-w-3xl">One asset intelligence core for equipment identity, lifecycle, maintenance, failure history and reliability — with DSIR as the first mature register.</p></div><button onClick={load} className="dsr-btn self-start"><RefreshCw className="w-4 h-4"/>Refresh</button></div>
   {error&&<div className="mb-4 rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-300">{error}</div>}
-  <section className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
-   {[["Total assets",overview?.total_assets??"—",Gauge],["Active",overview?.active_assets??"—",Activity],["High criticality",overview?.high_criticality_assets??"—",BrainCircuit],["Registers","5",Factory]].map(([label,value,Icon]:any)=><div className="dsr-stat" key={label as string}><div className="flex items-center justify-between"><span className="dsr-stat-label">{label}</span><Icon className="w-4 h-4 text-slate-500"/></div><div className="dsr-stat-value">{value}</div></div>)}
-  </section>
-  <section className="mb-5"><div className="dsr-panel-head rounded-t-lg"><div><div className="dsr-kicker">Asset registers</div><div className="dsr-title">Choose an intelligent register</div><div className="dsr-subtitle">Each register uses the same asset identity, relationship and intelligence foundation.</div></div></div>
-   <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 p-3 bg-[#0f1725] border border-t-0 border-[#253247] rounded-b-lg">
-    {modules.map(m=>{const meta=moduleMeta[m.code]||moduleMeta.DSIR;const Icon=meta.icon;return <Link href={meta.href} key={m.code} className="group rounded-lg border border-[#2a3950] bg-[#111a2a] p-4 hover:border-[#4EA1FF]/60 hover:bg-[#151f30] transition">
-      <div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg border border-[#33445b] bg-[#0b111d] grid place-items-center"><Icon className="w-5 h-5 text-slate-300"/></div><div><div className="text-xs text-slate-500">{m.area}</div><div className="text-lg font-bold text-white">{m.short_name}</div></div></div><ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-[#4EA1FF]"/></div>
-      <div className="mt-3 text-sm font-semibold text-slate-200">{m.name}</div><p className="mt-1 text-xs leading-5 text-slate-400">{m.description}</p>
-      <div className="mt-3 text-xs text-slate-500">{overview?.module_counts?.[m.code]??0} registered assets</div>
-    </Link>})}
-   </div>
-  </section>
+  <section className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">{[["Total assets",overview?.total_assets??"—",Gauge],["Active",overview?.active_assets??"—",Activity],["High criticality",overview?.high_criticality_assets??"—",BrainCircuit],["Registers","5",Factory]].map(([label,value,Icon]:any)=><div className="dsr-stat" key={label}><div className="flex items-center justify-between"><span className="dsr-stat-label">{label}</span><Icon className="w-4 h-4 text-slate-500"/></div><div className="dsr-stat-value">{value}</div></div>)}</section>
+  <section className="mb-5"><div className="dsr-panel-head rounded-t-lg"><div><div className="dsr-kicker">Asset registers</div><div className="dsr-title">Choose an intelligent register</div><div className="dsr-subtitle">Each register uses the same asset identity, relationship and intelligence foundation.</div></div></div><div className="grid md:grid-cols-2 xl:grid-cols-3 gap-3 p-3 bg-[#0f1725] border border-t-0 border-[#253247] rounded-b-lg">
+  {modules.map(m=>{const meta=moduleMeta[m.code]||moduleMeta.DSIR;const Icon=meta.icon;return <Link href={meta.href} key={m.code} className="group rounded-lg border border-[#2a3950] bg-[#111a2a] p-4 hover:border-[#4EA1FF]/60 hover:bg-[#151f30] transition"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg border border-[#33445b] bg-[#0b111d] grid place-items-center"><Icon className="w-5 h-5 text-slate-300"/></div><div><div className="text-xs text-slate-500">{m.area}</div><div className="text-lg font-bold text-white">{m.short_name}</div></div></div><ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-[#4EA1FF]"/></div><div className="mt-3 text-sm font-semibold text-slate-200">{m.name}</div><p className="mt-1 text-xs leading-5 text-slate-400">{m.description}</p><div className="mt-3 text-xs text-slate-500">{overview?.module_counts?.[m.code]??0} registered assets</div></Link>})}</div></section>
   <section className="mechanical-panel p-4"><div className="flex items-center gap-2"><BrainCircuit className="w-5 h-5 text-[#4EA1FF]"/><div><div className="font-semibold text-white">Asset Intelligence Core</div><div className="text-xs text-slate-400">Shared capability across every register</div></div></div><div className="grid grid-cols-2 md:grid-cols-6 gap-2 mt-4">{["Track","History","Life","Maintenance","Failure","Intelligence"].map(x=><div key={x} className="rounded-md border border-[#29384d] bg-[#0b111d] px-3 py-2 text-center text-xs font-semibold text-slate-300">{x}</div>)}</div></section>
  </main></div>;
 }
