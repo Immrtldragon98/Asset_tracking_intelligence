@@ -1,3 +1,2 @@
-import RegisterHome from "@/components/register/RegisterHome";
-
-export default function DSIRHome(){return <RegisterHome module="DSIR" />;}
+import { redirect } from "next/navigation";
+export default function DSIRPage(){ redirect("/stand-area"); }
