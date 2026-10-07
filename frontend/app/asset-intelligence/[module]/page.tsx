@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Header from "@/components/layout/Header";
 import { fetchApi } from "@/lib/api";
-import { ArrowLeft, BrainCircuit, CircleAlert, Cog, Cpu, Factory, Gauge, Wrench, Zap } from "lucide-react";
+import { ArrowLeft, BrainCircuit, AlertCircle, Cog, Cpu, Factory, Gauge, Wrench, Zap } from "lucide-react";
 
 const icons:any={DSIR:Factory,RMIR:Cog,MIR:Cpu,DIR:Zap,SSIR:Wrench};
 
