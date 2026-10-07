@@ -8,6 +8,13 @@ class Settings(BaseSettings):
         "DATABASE_URL",
         "postgresql://postgres:password@localhost:5432/digital_stand_register",
     )
+
+    def model_post_init(self, __context) -> None:
+        # Normalize pasted Render/Neon values before SQLAlchemy parses them.
+        url = self.DATABASE_URL.strip().strip('"').strip("'")
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        self.DATABASE_URL = url
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
