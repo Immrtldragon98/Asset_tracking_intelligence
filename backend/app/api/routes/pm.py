@@ -6,7 +6,11 @@ from sqlalchemy.orm import Session
 from app.auth.dependencies import require_operator, require_admin
 from app.database.session import get_db
 from app.models.pm_activity import PMActivity
-from app.models.user import User\nfrom app.models.line import Line\nfrom app.models.stand_position import Position\nfrom app.schemas.operation import ChangeStandSchema\nfrom app.services.operation_service import OperationService
+from app.models.user import User
+from app.models.line import Line
+from app.models.stand_position import Position
+from app.schemas.operation import ChangeStandSchema
+from app.services.operation_service import OperationService
 router=APIRouter()
 STATUSES={"PLANNED","DUE","COMPLETED","DEFERRED"}
 TYPES={"STAND_CHANGE","COUPLER_CHANGE","PIVOT_CHANGE","ENTRY_GUIDE","BEARING","OIL_SEAL","LUBRICATION","INSPECTION","ADJUSTMENT","BREAKDOWN","OTHER"}
