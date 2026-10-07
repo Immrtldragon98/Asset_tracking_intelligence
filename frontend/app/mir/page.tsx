@@ -1,3 +1,3 @@
-import RegisterHome from "@/components/register/RegisterHome";
-
-export default function MIRHome(){return <RegisterHome module="MIR" />;}
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+export default function Page(){return <main className="min-h-screen bg-[#080D16] text-slate-100 flex items-center justify-center p-6"><div className="w-full max-w-xl text-center"><Link href="/dashboard" className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-white"><ArrowLeft className="w-4 h-4"/>Back to Asset Tracking Intelligence</Link><div className="mt-8 rounded-2xl border border-[#26354a] bg-[#101827] p-8"><div className="text-[10px] uppercase tracking-[.18em] text-slate-500 font-bold">MIR</div><h1 className="mt-2 text-2xl font-bold text-white">Motor Intelligent Register</h1><p className="mt-3 text-sm text-slate-400">Motor hierarchy and live motor status will be built next, including bearings, coupler and sensors.</p><div className="mt-6 text-xs text-slate-600">Register foundation reserved. Equipment data will be added when the plant list is provided.</div></div></div></main>}
