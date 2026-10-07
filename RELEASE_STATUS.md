@@ -1,26 +1,26 @@
-# Release Status
+# Release Status — Asset Tracking Intelligence
 
-## Completed
-- Live W1/W2/W3 stand area (30 running positions)
-- Spare/preparation workflow and backend validation
-- Stand-change transaction with operator, reason, condition, leakage/vibration
-- Stand life in hours (campaign + cumulative)
-- Entry-guide asset/life/history subsystem
-- Editable inventory with quantity transaction history and archive behavior
-- Monthly Excel running-status export
-- 22/08/2026 commissioning seed with duplicate normalization
-- No automatic deletion of running/lifecycle state
-- PostgreSQL + Alembic migration startup
-- Backend production Docker image
-- Frontend production Docker image
-- Full Docker Compose stack with health checks
-- Configurable CORS and production secrets
-- Backend compile/test suite: 4 tests passing
+## Platform pivot completed
 
-## Commissioning items still requiring plant input
-- Four physical stand codes missing from the supplied 22/08/2026 report.
-- Historical life before 22/08/2026 for already-running stands, if you want lifetime totals to include pre-digital operation.
-- Real entry-guide asset IDs / initial installation mapping, if not yet entered manually.
+- Product identity changed from Digital Stand Register to Asset Tracking Intelligence
+- DSIR retained as the mature Finishing Mill register
+- Added shared asset_registry model with parent/child relationships
+- Added Asset Intelligence Core API
+- Added plant-wide register home screen
+- Added RMIR baseline for 5 Roughing Mill stands
+- Added 5 gearboxes, floating shafts, couplers, motors, drives and screw shafts
+- Added reusable register screens for DSIR/RMIR/MIR/DIR/SSIR
+- Existing DSIR lifecycle, inventory, PM, history and intelligence modules retained
 
-## Validation limitation in this build environment
-The frontend production build was prepared but could not be executed here because npm dependencies could not be downloaded within the available environment. The Dockerfile performs `npm ci` and `npm run build` during deployment, so any remaining frontend compile issue will surface at image build time rather than silently at runtime.
+## RMIR plant data still required
+
+The baseline contains identity and relationships only. Plant commissioning should provide actual asset/tag numbers, manufacturer/model, installation dates, rated power/speed where relevant, operating hours, criticality, maintenance/failure history, and confirmation of physical relationships.
+
+## Next engineering phase
+
+1. Connect maintenance and event history to generic asset IDs.
+2. Add MIR/DIR/SSIR commissioning forms.
+3. Add RMIR stand/gearbox/shaft/coupler/motor/drive detail pages.
+4. Extend the Maintenance Assistant to traverse parent/child assets.
+5. Add cross-asset investigation and comparison.
+6. Add production-safe authentication and expanded automated tests.
