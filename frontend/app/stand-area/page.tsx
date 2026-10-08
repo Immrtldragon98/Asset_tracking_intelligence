@@ -7,48 +7,354 @@ import ComponentPreparationModal from "@/components/stand/ComponentPreparationMo
 import { fetchApi } from "@/lib/api";
 import { AuthUser, canEdit, getUser, isAdmin } from "@/lib/auth";
 
-const ORDER=["READY","HYDROTEST","GAUGING","PENDING","YET_TO_READY"];
-const LABEL:Record<string,string>={READY:"Ready",HYDROTEST:"Hydrotest",GAUGING:"Gauging",PENDING:"Pending",YET_TO_READY:"Unstarted"};
-const STYLE:Record<string,{row:string,label:string,card:string,button:string,dot:string}>={
-  READY:{row:"border-slate-800 border-l-2 border-l-emerald-600 bg-[#101827]",label:"text-emerald-300",card:"border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",button:"border-slate-600 text-emerald-200 hover:bg-[#151F2E]",dot:"bg-emerald-400"},
-  HYDROTEST:{row:"border-slate-800 border-l-2 border-l-blue-600 bg-[#101827]",label:"text-blue-300",card:"border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",button:"border-slate-600 text-blue-200 hover:bg-[#151F2E]",dot:"bg-blue-400"},
-  GAUGING:{row:"border-slate-800 border-l-2 border-l-violet-600 bg-[#101827]",label:"text-violet-300",card:"border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",button:"border-slate-600 text-violet-200 hover:bg-[#151F2E]",dot:"bg-violet-400"},
-  PENDING:{row:"border-slate-800 border-l-2 border-l-amber-600 bg-[#101827]",label:"text-amber-300",card:"border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",button:"border-slate-600 text-amber-200 hover:bg-[#151F2E]",dot:"bg-amber-400"},
-  YET_TO_READY:{row:"border-slate-800 border-l-2 border-l-slate-600 bg-[#101827]",label:"text-slate-300",card:"border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",button:"border-slate-600 text-slate-200 hover:bg-[#151F2E]",dot:"bg-slate-500"},
+const ORDER = ["READY", "HYDROTEST", "GAUGING", "PENDING"];
+const LABEL: Record<string, string> = {
+  READY: "Ready",
+  HYDROTEST: "Hydrotest",
+  GAUGING: "Gauging",
+  PENDING: "Pending",
 };
-const NEXT:Record<string,string|undefined>={YET_TO_READY:"PENDING",GAUGING:"HYDROTEST",HYDROTEST:"READY"};
-type Stand={id:number;code:string;current_status:string;lifetime_hours:number;current_installed_at:string|null;is_running:boolean};
+const STYLE: Record<string, { row: string; label: string; card: string; button: string; dot: string }> = {
+  READY: {
+    row: "border-slate-800 border-l-2 border-l-emerald-600 bg-[#101827]",
+    label: "text-emerald-300",
+    card: "border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",
+    button: "border-slate-600 text-emerald-200 hover:bg-[#151F2E]",
+    dot: "bg-emerald-400",
+  },
+  HYDROTEST: {
+    row: "border-slate-800 border-l-2 border-l-blue-600 bg-[#101827]",
+    label: "text-blue-300",
+    card: "border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",
+    button: "border-slate-600 text-blue-200 hover:bg-[#151F2E]",
+    dot: "bg-blue-400",
+  },
+  GAUGING: {
+    row: "border-slate-800 border-l-2 border-l-violet-600 bg-[#101827]",
+    label: "text-violet-300",
+    card: "border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",
+    button: "border-slate-600 text-violet-200 hover:bg-[#151F2E]",
+    dot: "bg-violet-400",
+  },
+  PENDING: {
+    row: "border-slate-800 border-l-2 border-l-amber-600 bg-[#101827]",
+    label: "text-amber-300",
+    card: "border-slate-700 bg-[#0B111D] hover:bg-[#151F2E]",
+    button: "border-slate-600 text-amber-200 hover:bg-[#151F2E]",
+    dot: "bg-amber-400",
+  },
+};
 
-export default function StandAreaPage(){
-  const [stands,setStands]=useState<Stand[]>([]);const [loading,setLoading]=useState(true);const [error,setError]=useState("");const [saving,setSaving]=useState(false);const [selected,setSelected]=useState<any>(null);const [componentStand,setComponentStand]=useState<Stand|null>(null);const [user,setUser]=useState<AuthUser|null>(null);const [collapsed,setCollapsed]=useState<Record<string,boolean>>({HYDROTEST:true,GAUGING:true,YET_TO_READY:true});
-  const load=async()=>{try{setError("");setStands(await fetchApi("/stands/"));}catch(e){setError(e instanceof Error?e.message:"Could not load stands");}finally{setLoading(false)}};
-  useEffect(()=>{setUser(getUser());load()},[]);
-  const groups=useMemo(()=>Object.fromEntries(ORDER.map(s=>[s,stands.filter(x=>x.current_status===s).sort((a,b)=>a.code.localeCompare(b.code,undefined,{numeric:true}))])),[stands]);
-  const runningCount=stands.filter(x=>x.is_running ?? !!x.current_installed_at).length;
+const NEXT: Record<string, string | undefined> = {
+  GAUGING: "HYDROTEST",
+  HYDROTEST: "READY",
+};
 
-  const lastShiftReport={date:"05 Oct 2026",pending:[["Stand 1","1A"],["Stand 2","2D"],["Stand 3","3A"],["Stand 4","4D"],["Stand 5","5E"],["Stand 6","6D"],["Stand 7","7C"],["Stand 8","8.1"],["Stand 9","9F"],["Stand 10","10D"]],ready:[["Stand 1","1D"],["Stand 2","2E"],["Stand 3","3D"],["Stand 4",""],["Stand 5","5A"],["Stand 6","6C, 6.2"],["Stand 7","7E"],["Stand 8","8C, 8D"],["Stand 9","9C, 9A"],["Stand 10","10D, 10F"]],inp:"4C",w1:"1B, 2B, 3B, 4A, 5C, 6.1, 7B, 8B, 9D, 10C",w2:"1.1, 2.1, 3E, 4.1, 5B, 6A, 7A, 8E, 9, 10.1",w3:"1B, 2B, 3B, 4A, 5C, 6.1, 7B, 8B, 9D, 10C"};
+type Stand = {
+  id: number;
+  code: string;
+  current_status: string;
+  lifetime_hours: number;
+  current_installed_at: string | null;
+  is_running: boolean;
+};
 
-  async function advance(stand:Stand){if(!canEdit(user)){setError("Sign in as Admin or Operator to update stand readiness.");return;}if(stand.current_status==="PENDING"){setComponentStand(stand);return;}const target=NEXT[stand.current_status];if(!target)return;let who=user?.username||"";let remarks:string|null=null;if(["GAUGING","HYDROTEST","READY"].includes(target)){who=window.prompt(`Who completed ${LABEL[target]} for ${stand.code}?`,user?.username||"")?.trim()||"";if(!who)return;remarks=window.prompt("Remarks (optional)")?.trim()||null;}setSaving(true);try{await fetchApi("/operations/stands/status",{method:"POST",body:JSON.stringify({stand_code:stand.code,status:target,updated_by:who,remarks})});await load();}catch(e){setError(e instanceof Error?e.message:"Update failed");}finally{setSaving(false)}}
-  async function addStand(){if(!isAdmin(user)){setError("Admin access is required to add a new stand.");return;}const code=window.prompt("New stand code (example: 4E)")?.trim();if(!code)return;const life=Number(window.prompt("Existing life hours, if any","0")||"0");if(Number.isNaN(life)||life<0){setError("Life hours must be 0 or more.");return;}try{await fetchApi("/stands/",{method:"POST",body:JSON.stringify({code,initial_life_hours:life})});await load();}catch(e){setError(e instanceof Error?e.message:"Could not add stand")}}
-  async function openStand(stand:Stand){try{setSelected(await fetchApi(`/stands/${stand.id}`));}catch(e){setError(e instanceof Error?e.message:"Could not load stand")}}
+export default function StandAreaPage() {
+  const [stands, setStands] = useState<Stand[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [selected, setSelected] = useState<any>(null);
+  const [componentStand, setComponentStand] = useState<Stand | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
+    HYDROTEST: true,
+    GAUGING: true,
+  });
 
-  return <div className="dsr-page"><Header title="Stand Area"/><main className="dsr-main"><div className="full-bleed space-y-4">
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><h1 className="text-xl md:text-2xl font-bold text-white">Stand Preparation</h1><p className="text-sm text-slate-300 mt-1">Pending → Components → Gauging → Hydrotest → Ready</p></div><div className="flex gap-2"><div className="flex items-center gap-2 mr-auto sm:mr-0"><span className="text-[11px] uppercase tracking-wider text-slate-500">Running</span><span className="text-lg font-bold text-emerald-300">{runningCount}</span><span className="text-xs text-slate-500">/ {stands.length}</span></div>{isAdmin(user)&&<button onClick={addStand} className="dsr-btn-primary">+ New Stand</button>}<button onClick={load} className="dsr-btn">Refresh</button></div></div>
-    <section className="mechanical-panel overflow-hidden">
-      <div className="dsr-panel-head"><div><div className="dsr-kicker">Status of stands as of last updated</div><div className="font-bold text-white">Finishing Mill Stand – General Shift Report</div><p className="dsr-subtitle">Date: 05 Oct 2026</p></div><span className="dsr-chip">Shift report</span></div>
-      <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <div className="rounded-lg border border-amber-900/50 bg-amber-950/10 p-3"><div className="text-xs font-bold text-amber-300 mb-2">Pending</div><div className="grid grid-cols-2 gap-1.5 text-xs">{lastShiftReport.pending.map(([s,v])=><div key={s} className="flex justify-between gap-2 rounded border border-slate-800 bg-[#0b111d] px-2 py-1.5"><span className="text-slate-400">{s}</span><b className="text-white">{v}</b></div>)}</div></div>
-        <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/10 p-3"><div className="text-xs font-bold text-emerald-300 mb-2">Ready</div><div className="grid grid-cols-2 gap-1.5 text-xs">{lastShiftReport.ready.map(([s,v])=><div key={s} className="flex justify-between gap-2 rounded border border-slate-800 bg-[#0b111d] px-2 py-1.5"><span className="text-slate-400">{s}</span><b className="text-white">{v||"—"}</b></div>)}</div></div>
-        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-2 text-xs"><div className="rounded-lg border border-red-900/50 bg-red-950/10 p-3"><span className="text-slate-500">Work INP</span><div className="mt-1 font-bold text-red-300">{lastShiftReport.inp}</div></div><div className="rounded-lg border border-slate-800 bg-[#0b111d] p-3"><span className="text-slate-500">W1</span><div className="mt-1 text-slate-200">{lastShiftReport.w1}</div></div><div className="rounded-lg border border-slate-800 bg-[#0b111d] p-3"><span className="text-slate-500">W2</span><div className="mt-1 text-slate-200">{lastShiftReport.w2}</div></div><div className="rounded-lg border border-slate-800 bg-[#0b111d] p-3"><span className="text-slate-500">W3</span><div className="mt-1 text-slate-200">{lastShiftReport.w3}</div></div></div>
-      </div>
-    </section>
-    {!user&&<div className="rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-300">Viewer mode · Sign in to update stands.</div>}{error&&<div className="rounded-lg border border-red-900 bg-red-950/25 p-3 text-sm text-red-300">{error}</div>}
-    {loading?<div className="dsr-empty">Loading stand preparation...</div>:<div className="space-y-2">{ORDER.map(status=>{const style=STYLE[status];const count=groups[status].length;const isCollapsed=collapsed[status]??false;return <section key={status} className={`rounded-xl border ${style.row} overflow-hidden`}>
-      <button onClick={()=>setCollapsed(v=>({...v,[status]:!isCollapsed}))} className="w-full px-3 py-3 flex items-center justify-between text-left"><div className="flex items-center gap-2"><span className="text-slate-400 text-xs">{isCollapsed?"▶":"▼"}</span><span className={`w-2.5 h-2.5 rounded-full ${style.dot}`}/><span className={`text-sm font-bold ${style.label}`}>{LABEL[status]}</span><span className="rounded-full border border-slate-700/50 px-2 py-0.5 text-[10px] text-slate-300">{count}</span></div>{count===0&&<span className="text-xs text-slate-500">Empty stage</span>}</button>
-      {!isCollapsed&&<div className="border-t border-white/5 p-3"><div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">{groups[status].map((stand:Stand)=><div key={stand.id} className={`rounded-lg border ${style.card} p-2.5 min-w-0 transition-colors`}><button onClick={()=>openStand(stand)} className="w-full text-left"><div className="flex items-center justify-between gap-2"><div className="text-lg font-bold text-white truncate">{stand.code}</div><span className={`text-[9px] font-bold ${stand.is_running ?? !!stand.current_installed_at ? "text-emerald-300" : "text-slate-500"}`}>{stand.is_running ?? !!stand.current_installed_at ? "RUNNING" : "NOT RUNNING"}</span></div><div className="text-xs text-slate-300 mt-1">Life {Number(stand.lifetime_hours||0).toFixed(0)} h</div></button>{canEdit(user)&&status==="PENDING"&&<button disabled={saving} onClick={()=>advance(stand)} className={`mt-2 w-full min-h-[40px] rounded-md border px-2 py-1.5 text-xs font-medium ${style.button}`}>Components</button>}{canEdit(user)&&status!=="PENDING"&&NEXT[status]&&<button disabled={saving} onClick={()=>advance(stand)} className={`mt-2 w-full min-h-[40px] rounded-md border px-2 py-1.5 text-xs font-medium ${style.button}`}>→ {LABEL[NEXT[status]!]}</button>}</div>)}{count===0&&<div className="col-span-full rounded-lg border border-dashed border-slate-700/60 px-3 py-4 text-center text-sm text-slate-500">No stands in this stage</div>}</div></div>}
-    </section>})}</div>}
-  </div></main>
-  {selected&&<div className="fixed inset-0 z-50 bg-black/70 flex items-end md:items-center justify-center md:p-5" onClick={()=>setSelected(null)}><div className="w-full md:max-w-4xl max-h-[92vh] overflow-auto rounded-t-2xl md:rounded-xl bg-[#0d131b] border border-slate-700 p-4" onClick={e=>e.stopPropagation()}><div className="flex justify-end mb-2"><button onClick={()=>setSelected(null)} className="dsr-btn">Close</button></div><StandDetails stand={selected}/></div></div>}
-  {componentStand&&<ComponentPreparationModal stand={componentStand} onClose={()=>setComponentStand(null)} onComplete={load}/>} 
-  </div>;
+  const load = async () => {
+    try {
+      setError("");
+      setStands(await fetchApi("/stands/"));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load stands");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setUser(getUser());
+    load();
+  }, []);
+
+  const groups = useMemo(
+    () =>
+      Object.fromEntries(
+        ORDER.map((status) => [
+          status,
+          stands
+            .filter((x) => x.current_status === status)
+            .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
+        ])
+      ),
+    [stands]
+  );
+
+  const runningCount = stands.filter((x) => x.is_running).length;
+
+  async function advance(stand: Stand) {
+    if (!canEdit(user)) {
+      setError("Sign in as Admin or Operator to update stand readiness.");
+      return;
+    }
+
+    if (stand.current_status === "PENDING") {
+      setComponentStand(stand);
+      return;
+    }
+
+    const target = NEXT[stand.current_status];
+    if (!target) return;
+
+    const who = window
+      .prompt(`Who completed ${LABEL[target]} for ${stand.code}?`, user?.username || "")
+      ?.trim();
+    if (!who) return;
+
+    const remarks = window.prompt("Remarks (optional)")?.trim() || null;
+
+    setSaving(true);
+    try {
+      await fetchApi("/operations/stands/status", {
+        method: "POST",
+        body: JSON.stringify({
+          stand_code: stand.code,
+          status: target,
+          updated_by: who,
+          remarks,
+        }),
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Update failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addStand() {
+    if (!isAdmin(user)) {
+      setError("Admin access is required to add a new stand.");
+      return;
+    }
+
+    const code = window.prompt("New stand code (example: 4E)")?.trim();
+    if (!code) return;
+
+    const life = Number(window.prompt("Existing life hours, if any", "0") || "0");
+    if (Number.isNaN(life) || life < 0) {
+      setError("Life hours must be 0 or more.");
+      return;
+    }
+
+    try {
+      await fetchApi("/stands/", {
+        method: "POST",
+        body: JSON.stringify({ code, initial_life_hours: life }),
+      });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not add stand");
+    }
+  }
+
+  async function openStand(stand: Stand) {
+    try {
+      setSelected(await fetchApi(`/stands/${stand.id}`));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not load stand");
+    }
+  }
+
+  return (
+    <div className="dsr-page">
+      <Header title="Stand Area" />
+      <main className="dsr-main">
+        <div className="full-bleed space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-white">Stand Preparation</h1>
+              <p className="text-sm text-slate-300 mt-1">
+                Pending → Gauging → Hydrotest → Ready
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                A stand enters Ready only after both Gauging and Hydrotest are completed.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex items-center gap-2 mr-auto sm:mr-0">
+                <span className="text-[11px] uppercase tracking-wider text-slate-500">Running</span>
+                <span className="text-lg font-bold text-emerald-300">{runningCount}</span>
+              </div>
+              {isAdmin(user) && (
+                <button onClick={addStand} className="dsr-btn-primary">
+                  + New Stand
+                </button>
+              )}
+              <button onClick={load} className="dsr-btn">
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <section className="mechanical-panel overflow-hidden">
+            <div className="dsr-panel-head">
+              <div>
+                <div className="dsr-kicker">Clean preparation board</div>
+                <div className="font-bold text-white">Current Stand Readiness</div>
+                <p className="dsr-subtitle">
+                  Old shift-report/sample entries are not used here. The board is driven only by the stand status in the database.
+                </p>
+              </div>
+              <span className="dsr-chip">LIVE DATA</span>
+            </div>
+            <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2">
+              {ORDER.map((status) => (
+                <div key={status} className="rounded-lg border border-slate-800 bg-[#0b111d] p-3">
+                  <div className={`text-xs font-bold ${STYLE[status].label}`}>{LABEL[status]}</div>
+                  <div className="mt-1 text-2xl font-bold text-white">{groups[status]?.length || 0}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {!user && (
+            <div className="rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-300">
+              Viewer mode · Sign in to update stands.
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-red-900 bg-red-950/25 p-3 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="dsr-empty">Loading stand preparation...</div>
+          ) : (
+            <div className="space-y-2">
+              {ORDER.map((status) => {
+                const style = STYLE[status];
+                const count = groups[status].length;
+                const isCollapsed = collapsed[status] ?? false;
+
+                return (
+                  <section key={status} className={`rounded-xl border ${style.row} overflow-hidden`}>
+                    <button
+                      onClick={() => setCollapsed((v) => ({ ...v, [status]: !isCollapsed }))}
+                      className="w-full px-3 py-3 flex items-center justify-between text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 text-xs">{isCollapsed ? "▶" : "▼"}</span>
+                        <span className={`w-2.5 h-2.5 rounded-full ${style.dot}`} />
+                        <span className={`text-sm font-bold ${style.label}`}>{LABEL[status]}</span>
+                        <span className="rounded-full border border-slate-700/50 px-2 py-0.5 text-[10px] text-slate-300">
+                          {count}
+                        </span>
+                      </div>
+                      {count === 0 && <span className="text-xs text-slate-500">Empty stage</span>}
+                    </button>
+
+                    {!isCollapsed && (
+                      <div className="border-t border-white/5 p-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
+                          {groups[status].map((stand: Stand) => (
+                            <div
+                              key={stand.id}
+                              className={`rounded-lg border ${style.card} p-2.5 min-w-0 transition-colors`}
+                            >
+                              <button onClick={() => openStand(stand)} className="w-full text-left">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="text-lg font-bold text-white truncate">{stand.code}</div>
+                                  <span
+                                    className={`text-[9px] font-bold ${
+                                      stand.is_running ? "text-emerald-300" : "text-slate-500"
+                                    }`}
+                                  >
+                                    {stand.is_running ? "RUNNING" : "NOT RUNNING"}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-300 mt-1">
+                                  Life {Number(stand.lifetime_hours || 0).toFixed(0)} h
+                                </div>
+                              </button>
+
+                              {canEdit(user) && status === "PENDING" && (
+                                <button
+                                  disabled={saving}
+                                  onClick={() => advance(stand)}
+                                  className={`mt-2 w-full min-h-[40px] rounded-md border px-2 py-1.5 text-xs font-medium ${style.button}`}
+                                >
+                                  Components → Gauging
+                                </button>
+                              )}
+
+                              {canEdit(user) && status !== "PENDING" && NEXT[status] && (
+                                <button
+                                  disabled={saving}
+                                  onClick={() => advance(stand)}
+                                  className={`mt-2 w-full min-h-[40px] rounded-md border px-2 py-1.5 text-xs font-medium ${style.button}`}
+                                >
+                                  → {LABEL[NEXT[status]!]}
+                                </button>
+                              )}
+                            </div>
+                          ))}
+
+                          {count === 0 && (
+                            <div className="col-span-full rounded-lg border border-dashed border-slate-700/60 px-3 py-4 text-center text-sm text-slate-500">
+                              No stands in this stage
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </main>
+
+      {selected && (
+        <div
+          className="fixed inset-0 z-50 bg-black/70 flex items-end md:items-center justify-center md:p-5"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="w-full md:max-w-4xl max-h-[92vh] overflow-auto rounded-t-2xl md:rounded-xl bg-[#0d131b] border border-slate-700 p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-end mb-2">
+              <button onClick={() => setSelected(null)} className="dsr-btn">
+                Close
+              </button>
+            </div>
+            <StandDetails stand={selected} />
+          </div>
+        </div>
+      )}
+
+      {componentStand && (
+        <ComponentPreparationModal
+          stand={componentStand}
+          onClose={() => setComponentStand(null)}
+          onComplete={load}
+        />
+      )}
+    </div>
+  );
 }
