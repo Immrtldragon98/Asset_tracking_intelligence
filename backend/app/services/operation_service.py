@@ -14,8 +14,9 @@ from app.models.stand_preparation_event import StandPreparationEvent
 from app.models.stand_position import Position
 
 
+# Clean preparation workflow: every non-running stand starts in Pending.
+# A stand becomes Ready only after Gauging and then Hydrotest are completed.
 PREPARATION_FLOW = [
-    StatusEnum.YET_TO_READY,
     StatusEnum.PENDING,
     StatusEnum.GAUGING,
     StatusEnum.HYDROTEST,
