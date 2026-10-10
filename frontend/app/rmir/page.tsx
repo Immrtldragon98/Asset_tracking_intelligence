@@ -32,19 +32,19 @@ export default function RMIRPage(){
   <div className="max-w-[1800px] mx-auto px-3 md:px-6 py-5">
    <section className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
     <div className="dsr-stat"><div className="dsr-stat-label">Running stands</div><div className="dsr-stat-value text-emerald-300">{config?.total_running??0}</div></div>
-    <div className="dsr-stat"><div className="dsr-stat-label">Running lines</div><div className="dsr-stat-value">3</div></div>
-    <div className="dsr-stat"><div className="dsr-stat-label">Stands / line</div><div className="dsr-stat-value">5</div></div>
-    <div className="dsr-stat"><div className="dsr-stat-label">Status</div><div className="dsr-stat-value text-base text-emerald-300">LIVE CONFIG</div></div>
+    <div className="dsr-stat"><div className="dsr-stat-label">Running lines</div><div className="dsr-stat-value">{Object.keys(config?.lines||{}).length}</div></div>
+    <div className="dsr-stat"><div className="dsr-stat-label">Registered assets</div><div className="dsr-stat-value">{assets.length}</div></div>
+    <div className="dsr-stat"><div className="dsr-stat-label">Status</div><div className="dsr-stat-value text-base text-emerald-300">CONFIGURED</div></div>
    </section>
    {error&&<div className="mb-4 rounded-lg border border-red-900 bg-red-950/30 p-3 text-sm text-red-300">{error}</div>}
    <section className="rounded-xl border border-[#253247] overflow-hidden">
-    <div className="px-4 py-4 bg-[#151F2E] border-b border-[#253247]"><div className="text-[10px] uppercase tracking-[.12em] text-slate-500 font-bold">Roughing Mill</div><div className="text-xl font-semibold text-white mt-1">Current Running Configuration</div><p className="text-xs text-slate-400 mt-1">WRM1 / WRM2 / WRM3 with five running stands on each line.</p></div>
+    <div className="px-4 py-4 bg-[#151F2E] border-b border-[#253247]"><div className="text-[10px] uppercase tracking-[.12em] text-slate-500 font-bold">Roughing Mill</div><div className="text-xl font-semibold text-white mt-1">Current Running Configuration</div><p className="text-xs text-slate-400 mt-1">Live configured lineup; component dates are read from RMIR lifecycle records.</p></div>
     {loading?<div className="p-8 text-center text-sm text-slate-500">Loading RMIR configuration...</div>:<div className="p-3 space-y-3">
      {Object.entries(config?.lines||{}).map(([line,stands])=><div key={line} className="rounded-xl border border-[#253247] bg-[#0b111d] overflow-hidden">
       <div className="px-4 py-3 border-b border-[#253247] flex items-center justify-between"><div className="font-bold text-white">{line}</div><div className="text-xs font-bold text-emerald-300">{stands.length}/5 RUNNING</div></div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 p-3">{stands.map((code,i)=><article key={code} className="rounded-lg border border-emerald-900/60 bg-emerald-950/15 p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 p-3">{stands.map((code,i)=>{const rows=componentLife.filter(x=>(x.line_name||"").toUpperCase()===line.toUpperCase()&&(x.stand_code||"").toUpperCase()===code.toUpperCase()&&!x.removed_on);return <article key={code} className="rounded-lg border border-emerald-900/60 bg-emerald-950/15 p-3">
        <div className="flex items-center justify-between"><div><div className="text-[10px] text-slate-500">RM Stand {i+1}</div><div className="text-xl font-black text-white">{code}</div></div><span className="text-[9px] font-bold text-emerald-300">RUNNING</span></div>
-       <div className="mt-3 space-y-1.5">{components.map(c=>{const Icon=c.icon;return <div key={c.key} className="flex items-center gap-2 text-[10px] text-slate-400"><Icon className="w-3.5 h-3.5 text-slate-600"/><span>{c.label}</span><span className="ml-auto text-slate-600">asset data</span></div>})}</div>
+       <div className="mt-3 space-y-1.5">{components.map(c=>{const Icon=c.icon;return <div key={c.key} className="flex items-center gap-2 text-[10px] text-slate-400"><Icon className="w-3.5 h-3.5 text-slate-600"/><span>{c.label}</span><span className={rows.some(x=>x.component_type===c.key||(c.key==="GEARBOX"&&x.component_type==="GB"))?"ml-auto text-emerald-300":"ml-auto text-slate-600"}>{(()=>{const row=rows.find(x=>x.component_type===c.key||(c.key==="GEARBOX"&&x.component_type==="GB"));return row?`Installed ${row.installed_on}`:"Not recorded"})()}</span></div>})}</div>
       </article>)}</div>
      </div>)}
     </div>}
@@ -54,7 +54,7 @@ export default function RMIRPage(){
     <div className="overflow-x-auto"><table className="dsr-table min-w-[850px]"><thead><tr>{["Line","Position","Stand","Component","Side","Installed","Age (days)","Life (hours)"].map(x=><th className="dsr-th" key={x}>{x}</th>)}</tr></thead><tbody>{componentLife.filter(x=>!x.removed_on).map(x=><tr key={x.id}><td className="dsr-td">{x.line_name||"—"}</td><td className="dsr-td">{x.position_number??"—"}</td><td className="dsr-td">{x.stand_code||"—"}</td><td className="dsr-td font-semibold">{x.component_type.replaceAll("_"," ")}</td><td className="dsr-td">{x.component_side||"—"}</td><td className="dsr-td">{x.installed_on}</td><td className="dsr-td">{x.life_days}</td><td className="dsr-td">{x.observed_life_hours??"Meter readings needed"}</td></tr>)}{!componentLife.some(x=>!x.removed_on)&&<tr><td colSpan={8} className="dsr-empty">No component installation dates have been recorded yet.</td></tr>}</tbody></table></div>
    </section>
    <section className="mt-5 rounded-xl border border-[#253247] bg-[#101827] p-4"><div className="flex items-center gap-2"><Activity className="w-4 h-4 text-emerald-400"/><div><div className="text-sm font-semibold text-white">RMIR running-status rule</div><div className="text-xs text-slate-500 mt-1">The current plant configuration is authoritative for which RM stands are running. Asset records continue to supply installation, operating-hour and component details when entered.</div></div></div></section>
-   <div className="mt-3 text-xs text-slate-500">Configured current plant lineup · Last configured: 08 Oct 2026 · Register asset records available: {assets.length}</div>
+   <div className="mt-3 text-xs text-slate-500">Configured lineup · Register asset records available: {assets.length} · Active component lifecycle records: {componentLife.filter(x=>!x.removed_on).length}</div>
   </div>
  </main>;
 }
