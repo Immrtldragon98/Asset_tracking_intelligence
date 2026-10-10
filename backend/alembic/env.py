@@ -23,6 +23,7 @@ from app.models.inventory_transaction import InventoryTransaction
 from app.models.stand_preparation_event import StandPreparationEvent
 from app.models.drive_inventory import DriveInventory
 from app.models.maintenance_schedule import MaintenanceSchedule
+from app.models.reliability_intelligence import ComponentLifecycle, ReliabilityEvent
 
 
 config = context.config
