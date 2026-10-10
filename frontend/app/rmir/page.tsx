@@ -45,7 +45,7 @@ export default function RMIRPage(){
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 p-3">{stands.map((code,i)=>{const rows=componentLife.filter(x=>(x.line_name||"").toUpperCase()===line.toUpperCase()&&(x.stand_code||"").toUpperCase()===code.toUpperCase()&&!x.removed_on);return <article key={code} className="rounded-lg border border-emerald-900/60 bg-emerald-950/15 p-3">
        <div className="flex items-center justify-between"><div><div className="text-[10px] text-slate-500">RM Stand {i+1}</div><div className="text-xl font-black text-white">{code}</div></div><span className="text-[9px] font-bold text-emerald-300">RUNNING</span></div>
        <div className="mt-3 space-y-1.5">{components.map(c=>{const Icon=c.icon;return <div key={c.key} className="flex items-center gap-2 text-[10px] text-slate-400"><Icon className="w-3.5 h-3.5 text-slate-600"/><span>{c.label}</span><span className={rows.some(x=>x.component_type===c.key||(c.key==="GEARBOX"&&x.component_type==="GB"))?"ml-auto text-emerald-300":"ml-auto text-slate-600"}>{(()=>{const row=rows.find(x=>x.component_type===c.key||(c.key==="GEARBOX"&&x.component_type==="GB"));return row?`Installed ${row.installed_on}`:"Not recorded"})()}</span></div>})}</div>
-      </article>)}</div>
+      </article>})}</div>
      </div>)}
     </div>}
    </section>
