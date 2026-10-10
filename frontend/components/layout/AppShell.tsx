@@ -9,6 +9,7 @@ const DSIR_PATHS = [
   "/stand-area",
   "/operations",
   "/pm-schedule",
+  "/maintenance",
   "/inventory",
   "/activity",
   "/entry-guides",
