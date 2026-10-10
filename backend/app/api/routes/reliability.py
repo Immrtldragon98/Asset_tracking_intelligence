@@ -161,7 +161,7 @@ def list_events(module: str = "ALL", line: Optional[str] = None, position: Optio
     results = [event_out(x) for x in rows]
     # Preserve legacy stand changes and PM message imports in the same history view.
     # These older tables predate module tagging, so they are attributed to DSIR only.
-    if module.upper() in {"ALL", "DSIR"}:
+    if module.upper() in {"ALL", "DSIR", "RMIR"}:
         legacy_q = db.query(StandChangeEvent, Position, Line, StandAsset).join(
             Position, StandChangeEvent.position_id == Position.id
         ).join(Line, Position.line_id == Line.id).join(
@@ -170,8 +170,10 @@ def list_events(module: str = "ALL", line: Optional[str] = None, position: Optio
         if line: legacy_q = legacy_q.filter(Line.name == line.upper())
         if position: legacy_q = legacy_q.filter(Position.position_number == position)
         for ev, pos, ln, installed in legacy_q.order_by(StandChangeEvent.changed_at.desc()).limit(300).all():
+            legacy_module = "RMIR" if ln.name.upper().startswith("WRM") else "DSIR"
+            if module.upper() not in {"ALL", legacy_module}: continue
             results.append({
-                "id": -1000000 - ev.id, "module_code": "DSIR", "event_at": ev.changed_at.isoformat(),
+                "id": -1000000 - ev.id, "module_code": legacy_module, "event_at": ev.changed_at.isoformat(),
                 "line_name": ln.name, "position_number": pos.position_number, "stand_code": installed.code,
                 "asset_code": None, "equipment": "Stand", "component_type": "STAND", "event_type": "STAND_CHANGE",
                 "failure_mode": ev.removed_condition or ev.reason, "symptoms": ev.removed_condition,
@@ -187,10 +189,12 @@ def list_events(module: str = "ALL", line: Optional[str] = None, position: Optio
         if line: pm_q = pm_q.filter(PMActivity.line_name == line.upper())
         if position: pm_q = pm_q.filter(PMActivity.position_number == position)
         for pm in pm_q.order_by(PMActivity.planned_date.desc(), PMActivity.id.desc()).limit(300).all():
+            legacy_module = "RMIR" if (pm.line_name or "").upper().startswith("WRM") else "DSIR"
+            if module.upper() not in {"ALL", legacy_module}: continue
             if component and (pm.component or "").upper().replace(" ", "_") != component.upper().replace(" ", "_"):
                 continue
             results.append({
-                "id": -2000000 - pm.id, "module_code": "DSIR", "event_at": datetime.combine(pm.planned_date, time.min).isoformat(),
+                "id": -2000000 - pm.id, "module_code": legacy_module, "event_at": datetime.combine(pm.planned_date, time.min).isoformat(),
                 "line_name": pm.line_name, "position_number": pm.position_number, "stand_code": pm.stand_code,
                 "asset_code": None, "equipment": pm.equipment, "component_type": pm.component,
                 "event_type": pm.activity_type or "PM", "failure_mode": None, "symptoms": pm.remarks,
@@ -239,22 +243,26 @@ def ask_reliability(payload: AnalyseInput, db: Session = Depends(get_db)):
             "confirmed_cause": row.confirmed_cause, "action": row.action_taken,
             "removed": row.part_removed, "installed": row.part_installed, "source": row.source_text
         })
-    if module in {"ALL", "DSIR"}:
+    if module in {"ALL", "DSIR", "RMIR"}:
         legacy = db.query(StandChangeEvent, Position, Line, StandAsset).join(
             Position, StandChangeEvent.position_id == Position.id
         ).join(Line, Position.line_id == Line.id).join(
             StandAsset, StandChangeEvent.installed_stand_id == StandAsset.id
         ).order_by(StandChangeEvent.changed_at.desc()).limit(30).all()
         for event, position, line, stand in legacy:
-            context_rows.append({"date": event.changed_at.isoformat(), "register": "DSIR",
+            legacy_module = "RMIR" if line.name.upper().startswith("WRM") else "DSIR"
+            if module not in {"ALL", legacy_module}: continue
+            context_rows.append({"date": event.changed_at.isoformat(), "register": legacy_module,
                 "line": line.name, "position": position.position_number, "stand": stand.code,
                 "event": "STAND_CHANGE", "failure": event.removed_condition or event.reason,
                 "action": f"Removed stand ID {event.removed_stand_id}; installed {stand.code}",
                 "reason": event.reason, "notes": event.notes})
-    if module in {"ALL", "DSIR"}:
+    if module in {"ALL", "DSIR", "RMIR"}:
         pm_rows = db.query(PMActivity).order_by(PMActivity.planned_date.desc()).limit(30).all()
         for row in pm_rows:
-            context_rows.append({"date": row.planned_date.isoformat(), "register": "DSIR",
+            legacy_module = "RMIR" if (row.line_name or "").upper().startswith("WRM") else "DSIR"
+            if module not in {"ALL", legacy_module}: continue
+            context_rows.append({"date": row.planned_date.isoformat(), "register": legacy_module,
                 "line": row.line_name, "position": row.position_number, "stand": row.stand_code,
                 "equipment": row.equipment, "component": row.component, "event": row.activity_type,
                 "symptoms": row.remarks, "action": row.activity, "removed": row.from_value,
