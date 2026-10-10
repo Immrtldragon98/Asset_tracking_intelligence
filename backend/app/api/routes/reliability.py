@@ -7,7 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import require_operator
 from app.database.session import get_db
+from app.models.user import User
 from app.models.reliability_intelligence import ComponentLifecycle, ReliabilityEvent
 from app.models.stand_change_event import StandChangeEvent
 from app.models.stand_position import Position
@@ -137,8 +139,8 @@ def list_components(module: str = "ALL", line: Optional[str] = None, component_t
 
 
 @router.post("/components")
-def create_component(payload: ComponentInput, db: Session = Depends(get_db)):
-    row = ComponentLifecycle(**payload.model_dump())
+def create_component(payload: ComponentInput, db: Session = Depends(get_db), user: User = Depends(require_operator)):
+    row = ComponentLifecycle(**payload.model_dump(), recorded_by=user.username)
     db.add(row); db.commit(); db.refresh(row)
     return component_out(row)
 
@@ -282,8 +284,8 @@ def ask_reliability(payload: AnalyseInput, db: Session = Depends(get_db)):
 
 
 @router.post("/events")
-def create_event(payload: EventInput, db: Session = Depends(get_db)):
-    row = ReliabilityEvent(**payload.model_dump())
+def create_event(payload: EventInput, db: Session = Depends(get_db), user: User = Depends(require_operator)):
+    row = ReliabilityEvent(**payload.model_dump(), recorded_by=user.username)
     db.add(row); db.commit(); db.refresh(row)
     return event_out(row)
 
@@ -334,14 +336,14 @@ class ConfirmInput(BaseModel):
 
 
 @router.post("/confirm")
-def confirm_analysis(payload: ConfirmInput, db: Session = Depends(get_db)):
+def confirm_analysis(payload: ConfirmInput, db: Session = Depends(get_db), user: User = Depends(require_operator)):
     saved_events, saved_components, skipped = [], [], []
     for idx, raw in enumerate(payload.events):
         try:
             raw = {**raw, "source_text": payload.source_text or raw.get("source_text"), "verification_status": "VERIFIED"}
             if not raw.get("event_at"): raise ValueError("Event date is missing; add a date before saving verified history.")
             parsed = EventInput(**raw)
-            row = ReliabilityEvent(**parsed.model_dump())
+            row = ReliabilityEvent(**parsed.model_dump(), recorded_by=user.username)
             db.add(row); db.flush()
             saved_events.append(row.id)
         except Exception as exc:
@@ -351,7 +353,7 @@ def confirm_analysis(payload: ConfirmInput, db: Session = Depends(get_db)):
             raw = {**raw, "source_text": payload.source_text or raw.get("source_text")}
             if not raw.get("installed_on"): raise ValueError("Installation date is missing; component life cannot be calculated without it.")
             parsed = ComponentInput(**raw)
-            row = ComponentLifecycle(**parsed.model_dump())
+            row = ComponentLifecycle(**parsed.model_dump(), recorded_by=user.username)
             db.add(row); db.flush()
             saved_components.append(row.id)
         except Exception as exc:
