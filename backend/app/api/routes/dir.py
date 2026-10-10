@@ -56,6 +56,7 @@ def _serialize(row: DriveInventory):
         "notes": row.notes,
         "installation_date": row.installation_date.isoformat() if row.installation_date else None,
         "running_hours": row.running_hours or 0,
+        "operational_status": row.operational_status or "RUNNING",
     }
 
 
@@ -161,6 +162,24 @@ def update_drive_usage(drive_id: int, payload: DriveUsageUpdate, db: Session = D
         raise HTTPException(status_code=404, detail="Drive record not found.")
     row.installation_date = payload.installation_date
     row.running_hours = payload.running_hours
+    db.commit()
+    db.refresh(row)
+    return _serialize(row)
+
+
+class DriveStatusUpdate(BaseModel):
+    operational_status: str
+
+
+@router.patch("/drives/{drive_id}/status")
+def update_drive_status(drive_id: int, payload: DriveStatusUpdate, db: Session = Depends(get_db)):
+    row = db.query(DriveInventory).filter(DriveInventory.id == drive_id).one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Drive record not found.")
+    status = payload.operational_status.strip().upper()
+    if status not in {"RUNNING", "STOPPED", "MAINTENANCE", "FAULT"}:
+        raise HTTPException(status_code=400, detail="Status must be RUNNING, STOPPED, MAINTENANCE, or FAULT.")
+    row.operational_status = status
     db.commit()
     db.refresh(row)
     return _serialize(row)
