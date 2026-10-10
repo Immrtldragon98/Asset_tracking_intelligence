@@ -7,7 +7,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "20261011_dir_alerts"
-down_revision = "20261008_reset_stand_preparation"
+down_revision = "20261011_dir_drive_inventory"
 branch_labels = None
 depends_on = None
 
