@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.routes import auth, dashboard, operations, stands, entry_guides, activity, reports, inventory, import_report, knowledge, historical, planning, intelligence, investigation, stand_events, system, pm, assets, assistant, dir as dir_routes, alerts, maintenance_schedules
+from app.api.routes import auth, dashboard, operations, stands, entry_guides, activity, reports, inventory, import_report, knowledge, historical, planning, intelligence, investigation, stand_events, system, pm, assets, assistant, dir as dir_routes, alerts, maintenance_schedules, reliability
 
 api_router = APIRouter()
 
@@ -9,6 +9,7 @@ api_router.include_router(assets.router, prefix="/assets", tags=["Asset Intellig
 api_router.include_router(dir_routes.router, prefix="/dir", tags=["Drive Intelligent Register"])
 api_router.include_router(alerts.router, prefix="/alerts", tags=["Maintenance Alerts"])
 api_router.include_router(maintenance_schedules.router, prefix="/maintenance-schedules", tags=["Plant-wide Maintenance Schedule"])
+api_router.include_router(reliability.router, prefix="/reliability", tags=["Reliability Intelligence"])
 api_router.include_router(assistant.router, prefix="/assistant", tags=["Grok Asset Intelligence Assistant"])
 api_router.include_router(operations.router, prefix="/operations", tags=["Operations"])
 api_router.include_router(stands.router, prefix="/stands", tags=["Stands"])
