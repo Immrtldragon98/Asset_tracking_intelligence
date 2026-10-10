@@ -13,7 +13,7 @@ from app.services.groq_ai import ask_groq
 
 router = APIRouter()
 MODULES = {"ALL", "DSIR", "RMIR", "MIR", "DIR", "SSIR"}
-EVENT_TYPES = {"BREAKDOWN", "INSPECTION", "REPAIR", "COMPONENT_CHANGE", "STAND_CHANGE", "PM", "OBSERVATION", "OTHER"}
+EVENT_TYPES = {"MAINTENANCE", "BREAKDOWN", "INSPECTION", "REPAIR", "COMPONENT_CHANGE", "STAND_CHANGE", "PM", "OBSERVATION", "OTHER"}
 COMPONENT_TYPES = {"STAND", "ROLL", "ENTRY_GUIDE", "GEARBOX", "GB", "MOTOR", "FLOATING_SHAFT", "COUPLER", "COUPLER_MOTOR_SIDE", "COUPLER_GB_SIDE", "BEARING", "OIL_SEAL", "SLEEVE", "SHAFT", "SCREW_SHAFT", "DRIVE", "VFD", "OTHER"}
 
 
@@ -59,7 +59,7 @@ class EventInput(BaseModel):
     asset_code: Optional[str] = None
     equipment: Optional[str] = None
     component_type: Optional[str] = None
-    event_type: str = "MAINTENANCE"
+    event_type: str = "OTHER"
     failure_mode: Optional[str] = None
     symptoms: Optional[str] = None
     suspected_cause: Optional[str] = None
