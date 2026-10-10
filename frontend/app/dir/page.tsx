@@ -10,7 +10,7 @@ type Drive = {
   supply_from:string|null; panel_location:string|null; manufacturer:string|null; rating:string|null;
   module_quantity:string|null; model:string|null; spare_available:string|null; spare_location:string|null;
   ip_address:string|null; module_power_supply:string|null; motor_kw:number|null; voltage:string|null;
-  motor_rpm:number|null; motor_flc_amp:number|null; status:string; criticality:string; notes:string|null;
+  motor_rpm:number|null; motor_flc_amp:number|null; installation_date:string|null; running_hours:number; status:string; criticality:string; notes:string|null;
 };
 type DirResponse = { assets:Drive[]; total:number; distinct_makes:number; distinct_areas:number };
 
@@ -24,6 +24,9 @@ export default function DIRPage(){
  const [area,setArea]=useState("ALL");
  const [make,setMake]=useState("ALL");
  const [selected,setSelected]=useState<Drive|null>(null);
+ const [installedDate,setInstalledDate]=useState("");
+ const [runningHours,setRunningHours]=useState("0");
+ const [savingUsage,setSavingUsage]=useState(false);
 
  async function load(){
    setLoading(true); setError("");
@@ -33,6 +36,15 @@ export default function DIRPage(){
  }
  useEffect(()=>{load()},[]);
 
+ async function saveUsage(){
+   if(!selected)return;
+   setSavingUsage(true);setError("");setNotice("");
+   try{
+     const updated=await fetchApi(`/dir/drives/${selected.id}/usage`,{method:"PATCH",body:JSON.stringify({installation_date:installedDate||null,running_hours:Number(runningHours)})}) as Drive;
+     setSelected(updated);setAssets(prev=>prev.map(a=>a.id===updated.id?updated:a));setNotice("Installation date and running hours saved.");
+   }catch(e){setError(e instanceof Error?e.message:"Could not save usage details");}
+   finally{setSavingUsage(false);}
+ }
  async function importWorkbook(event:ChangeEvent<HTMLInputElement>){
    const file=event.target.files?.[0];
    if(!file)return;
@@ -79,10 +91,10 @@ export default function DIRPage(){
     {notice&&<div className="mt-3 rounded-lg border border-emerald-900 bg-emerald-950/30 p-3 text-sm text-emerald-300">{notice}</div>}
     {loading?<div className="py-12 text-center text-sm text-slate-400">Loading drive inventory…</div>:assets.length===0?<div className="py-12 text-center"><Zap className="mx-auto w-8 h-8 text-slate-600"/><h2 className="mt-3 font-semibold">Import the CH#2 workbook</h2><p className="mt-2 text-sm text-slate-500 max-w-lg mx-auto">Choose the supplied VFD Used List .xlsx file above. The first worksheet is parsed and stored in a dedicated DIR table; re-importing updates the matching source rows.</p></div>:<>
      <div className="mt-4 flex items-center justify-between text-xs text-slate-500"><span>Showing {filtered.length} of {assets.length} records</span><span>Click a row to inspect full details</span></div>
-     <div className="mt-3 overflow-x-auto rounded-lg border border-slate-800"><table className="w-full min-w-[1200px] text-left text-sm"><thead className="bg-[#0b111d] text-[10px] uppercase tracking-wider text-slate-500"><tr>{["Equipment","Area / location","VFD make","Rating / model","Panel location","Motor kW","IP address","Spare availability"].map(h=><th key={h} className="px-3 py-3 font-semibold">{h}</th>)}</tr></thead><tbody>{filtered.map(a=><tr key={a.id} onClick={()=>setSelected(a)} className="border-t border-slate-800/80 hover:bg-slate-800/40 cursor-pointer"><td className="px-3 py-3"><div className="font-semibold text-white">{a.name}</div><div className="mt-1 text-[10px] text-slate-500">{a.asset_code} · row {a.source_row}</div></td><td className="px-3 py-3 text-slate-300"><div>{a.area||"—"}</div><div className="text-[10px] text-slate-500">{a.location||"—"}</div></td><td className="px-3 py-3">{a.manufacturer||"—"}</td><td className="px-3 py-3"><div>{a.rating||"—"}</div><div className="text-[10px] text-slate-500">{a.model||"No model listed"}</div></td><td className="px-3 py-3 text-slate-400">{a.panel_location||"—"}</td><td className="px-3 py-3">{a.motor_kw==null?"—":a.motor_kw}</td><td className="px-3 py-3 text-slate-400">{a.ip_address||"—"}</td><td className="px-3 py-3 text-slate-300">{a.spare_available||"—"}</td></tr>)}</tbody></table></div>
+     <div className="mt-3 overflow-x-auto rounded-lg border border-slate-800"><table className="w-full min-w-[1200px] text-left text-sm"><thead className="bg-[#0b111d] text-[10px] uppercase tracking-wider text-slate-500"><tr>{["Equipment","Area / location","VFD make","Rating / model","Panel location","Motor kW","Installed on","Running hours","IP address","Spare availability"].map(h=><th key={h} className="px-3 py-3 font-semibold">{h}</th>)}</tr></thead><tbody>{filtered.map(a=><tr key={a.id} onClick={()=>{setSelected(a);setInstalledDate(a.installation_date||"");setRunningHours(String(a.running_hours||0));}} className="border-t border-slate-800/80 hover:bg-slate-800/40 cursor-pointer"><td className="px-3 py-3"><div className="font-semibold text-white">{a.name}</div><div className="mt-1 text-[10px] text-slate-500">{a.asset_code} · row {a.source_row}</div></td><td className="px-3 py-3 text-slate-300"><div>{a.area||"—"}</div><div className="text-[10px] text-slate-500">{a.location||"—"}</div></td><td className="px-3 py-3">{a.manufacturer||"—"}</td><td className="px-3 py-3"><div>{a.rating||"—"}</div><div className="text-[10px] text-slate-500">{a.model||"No model listed"}</div></td><td className="px-3 py-3 text-slate-400">{a.panel_location||"—"}</td><td className="px-3 py-3">{a.motor_kw==null?"—":a.motor_kw}</td><td className="px-3 py-3 text-slate-400">{a.installation_date||"Not set"}</td><td className="px-3 py-3 tabular-nums">{Number(a.running_hours||0).toLocaleString()} h</td><td className="px-3 py-3 text-slate-400">{a.ip_address||"—"}</td><td className="px-3 py-3 text-slate-300">{a.spare_available||"—"}</td></tr>)}</tbody></table></div>
     </>}
    </section>
-   {selected&&<div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 md:items-center md:p-5" onClick={()=>setSelected(null)}><section className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-t-2xl border border-slate-700 bg-[#101827] p-5 md:rounded-xl" onClick={e=>e.stopPropagation()}><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] uppercase tracking-widest text-sky-400">DIR source row {selected.source_row}</div><h2 className="mt-1 text-xl font-bold">{selected.name}</h2><p className="text-xs text-slate-500">{selected.asset_code}</p></div><button onClick={()=>setSelected(null)} className="rounded-md border border-slate-700 px-3 py-1.5 text-sm">Close</button></div><div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">{[["Area",selected.area],["Equipment location",selected.location],["Supply from",selected.supply_from],["Panel location",selected.panel_location],["VFD make",selected.manufacturer],["VFD rating",selected.rating],["Model number",selected.model],["Module quantity",selected.module_quantity],["Spare availability",selected.spare_available],["Spare location",selected.spare_location],["IP address",selected.ip_address],["VFD module power supply",selected.module_power_supply],["Motor kW",selected.motor_kw],["Voltage",selected.voltage],["Motor RPM",selected.motor_rpm],["Motor FLC (A)",selected.motor_flc_amp],["Notes",selected.notes]].map(([k,v])=><div key={k} className="rounded-lg border border-slate-800 bg-[#080D16] p-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div><div className="mt-1 break-words text-sm text-slate-200">{v==null||v===""?"—":String(v)}</div></div>)}</div></section></div>}
+   {selected&&<div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 md:items-center md:p-5" onClick={()=>setSelected(null)}><section className="max-h-[90vh] w-full max-w-3xl overflow-auto rounded-t-2xl border border-slate-700 bg-[#101827] p-5 md:rounded-xl" onClick={e=>e.stopPropagation()}><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] uppercase tracking-widest text-sky-400">DIR source row {selected.source_row}</div><h2 className="mt-1 text-xl font-bold">{selected.name}</h2><p className="text-xs text-slate-500">{selected.asset_code}</p></div><button onClick={()=>setSelected(null)} className="rounded-md border border-slate-700 px-3 py-1.5 text-sm">Close</button></div><div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">{[["Area",selected.area],["Installation date",selected.installation_date],["Running hours",selected.running_hours],["Equipment location",selected.location],["Supply from",selected.supply_from],["Panel location",selected.panel_location],["VFD make",selected.manufacturer],["VFD rating",selected.rating],["Model number",selected.model],["Module quantity",selected.module_quantity],["Spare availability",selected.spare_available],["Spare location",selected.spare_location],["IP address",selected.ip_address],["VFD module power supply",selected.module_power_supply],["Motor kW",selected.motor_kw],["Voltage",selected.voltage],["Motor RPM",selected.motor_rpm],["Motor FLC (A)",selected.motor_flc_amp],["Notes",selected.notes]].map(([k,v])=><div key={k} className="rounded-lg border border-slate-800 bg-[#080D16] p-3"><div className="text-[10px] uppercase tracking-wider text-slate-500">{k}</div><div className="mt-1 break-words text-sm text-slate-200">{v==null||v===""?"—":String(v)}</div></div>)}</div></section></div>}
   </div>
  </main>
 }
