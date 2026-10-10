@@ -9,6 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.reliability_intelligence import ComponentLifecycle, ReliabilityEvent
+from app.models.stand_change_event import StandChangeEvent
+from app.models.stand_position import Position
+from app.models.line import Line
+from app.models.stand_asset import StandAsset
+from app.models.pm_activity import PMActivity
 from app.services.groq_ai import ask_groq
 
 router = APIRouter()
@@ -154,6 +159,70 @@ def list_events(module: str = "ALL", line: Optional[str] = None, position: Optio
                      (ReliabilityEvent.stand_code.ilike(like)) | (ReliabilityEvent.equipment.ilike(like)))
     rows = q.order_by(ReliabilityEvent.event_at.desc(), ReliabilityEvent.id.desc()).limit(max(1, min(limit, 1000))).all()
     return {"total": len(rows), "events": [event_out(x) for x in rows]}
+
+
+@router.post("/ask")
+def ask_reliability(payload: AnalyseInput, db: Session = Depends(get_db)):
+    module = payload.module_code.strip().upper()
+    if module not in MODULES:
+        raise HTTPException(400, "Invalid register")
+    terms = [x for x in re.findall(r"[A-Za-z0-9_-]{3,}", payload.text.lower()) if x not in {"what","when","where","which","about","before","after","failure","breakdown"}][:8]
+    q = db.query(ReliabilityEvent)
+    if module != "ALL": q = q.filter(ReliabilityEvent.module_code == module)
+    if terms:
+        from sqlalchemy import or_
+        clauses = []
+        for term in terms:
+            like = "%" + term + "%"
+            clauses.extend([ReliabilityEvent.symptoms.ilike(like), ReliabilityEvent.failure_mode.ilike(like),
+                            ReliabilityEvent.action_taken.ilike(like), ReliabilityEvent.equipment.ilike(like),
+                            ReliabilityEvent.component_type.ilike(like), ReliabilityEvent.stand_code.ilike(like),
+                            ReliabilityEvent.source_text.ilike(like)])
+        matched = q.filter(or_(*clauses)).order_by(ReliabilityEvent.event_at.desc()).limit(30).all()
+    else:
+        matched = q.order_by(ReliabilityEvent.event_at.desc()).limit(30).all()
+    context_rows = []
+    for row in matched:
+        context_rows.append({
+            "date": row.event_at.isoformat(), "register": row.module_code, "line": row.line_name,
+            "position": row.position_number, "stand": row.stand_code, "equipment": row.equipment,
+            "component": row.component_type, "event": row.event_type, "failure": row.failure_mode,
+            "symptoms": row.symptoms, "suspected_cause": row.suspected_cause,
+            "confirmed_cause": row.confirmed_cause, "action": row.action_taken,
+            "removed": row.part_removed, "installed": row.part_installed, "source": row.source_text
+        })
+    if module in {"ALL", "DSIR"}:
+        legacy = db.query(StandChangeEvent, Position, Line, StandAsset).join(
+            Position, StandChangeEvent.position_id == Position.id
+        ).join(Line, Position.line_id == Line.id).join(
+            StandAsset, StandChangeEvent.installed_stand_id == StandAsset.id
+        ).order_by(StandChangeEvent.changed_at.desc()).limit(30).all()
+        for event, position, line, stand in legacy:
+            context_rows.append({"date": event.changed_at.isoformat(), "register": "DSIR",
+                "line": line.name, "position": position.position_number, "stand": stand.code,
+                "event": "STAND_CHANGE", "failure": event.removed_condition or event.reason,
+                "action": f"Removed stand ID {event.removed_stand_id}; installed {stand.code}",
+                "reason": event.reason, "notes": event.notes})
+    if module in {"ALL", "DSIR"}:
+        pm_rows = db.query(PMActivity).order_by(PMActivity.planned_date.desc()).limit(30).all()
+        for row in pm_rows:
+            context_rows.append({"date": row.planned_date.isoformat(), "register": "DSIR",
+                "line": row.line_name, "position": row.position_number, "stand": row.stand_code,
+                "equipment": row.equipment, "component": row.component, "event": row.activity_type,
+                "symptoms": row.remarks, "action": row.activity, "removed": row.from_value,
+                "installed": row.to_value, "source": row.source_text})
+    context_rows = context_rows[:60]
+    if not context_rows:
+        return {"answer":"No verified historical records match this query yet. Add maintenance messages or component histories first; I will not invent a past failure.",
+                "matched_records":0,"sources":[]}
+    try:
+        answer = ask_groq(
+            "Investigate this maintenance question using only the supplied records. State matching past events and dates first, then verified actions, confirmed vs suspected causes, recurrence signals, and practical checks. If records do not prove a cause, say so. Cite event date, line/position and component for each claim. Do not invent details.\n\nQuestion: " + payload.text,
+            context=json.dumps(context_rows, default=str)
+        )
+    except Exception:
+        answer = "The AI provider is unavailable. Matching stored history is shown below so you can still inspect the evidence."
+    return {"answer":answer,"matched_records":len(context_rows),"sources":context_rows[:15]}
 
 
 @router.post("/events")
