@@ -158,7 +158,55 @@ def list_events(module: str = "ALL", line: Optional[str] = None, position: Optio
                      (ReliabilityEvent.failure_mode.ilike(like)) | (ReliabilityEvent.action_taken.ilike(like)) |
                      (ReliabilityEvent.stand_code.ilike(like)) | (ReliabilityEvent.equipment.ilike(like)))
     rows = q.order_by(ReliabilityEvent.event_at.desc(), ReliabilityEvent.id.desc()).limit(max(1, min(limit, 1000))).all()
-    return {"total": len(rows), "events": [event_out(x) for x in rows]}
+    results = [event_out(x) for x in rows]
+    # Preserve legacy stand changes and PM message imports in the same history view.
+    # These older tables predate module tagging, so they are attributed to DSIR only.
+    if module.upper() in {"ALL", "DSIR"}:
+        legacy_q = db.query(StandChangeEvent, Position, Line, StandAsset).join(
+            Position, StandChangeEvent.position_id == Position.id
+        ).join(Line, Position.line_id == Line.id).join(
+            StandAsset, StandChangeEvent.installed_stand_id == StandAsset.id
+        )
+        if line: legacy_q = legacy_q.filter(Line.name == line.upper())
+        if position: legacy_q = legacy_q.filter(Position.position_number == position)
+        for ev, pos, ln, installed in legacy_q.order_by(StandChangeEvent.changed_at.desc()).limit(300).all():
+            results.append({
+                "id": -1000000 - ev.id, "module_code": "DSIR", "event_at": ev.changed_at.isoformat(),
+                "line_name": ln.name, "position_number": pos.position_number, "stand_code": installed.code,
+                "asset_code": None, "equipment": "Stand", "component_type": "STAND", "event_type": "STAND_CHANGE",
+                "failure_mode": ev.removed_condition or ev.reason, "symptoms": ev.removed_condition,
+                "suspected_cause": None, "confirmed_cause": None,
+                "action_taken": f"Removed stand ID {ev.removed_stand_id}; installed {installed.code}",
+                "part_removed": str(ev.removed_stand_id), "part_installed": installed.code,
+                "downtime_minutes": None, "operating_hours": None, "source_text": ev.notes or ev.reason,
+                "ai_summary": f"Stand changed by {ev.changed_by}. Reason: {ev.reason}",
+                "ai_confidence": None, "verification_status": "LEGACY_HISTORY",
+                "recorded_by": ev.changed_by, "created_at": ev.changed_at.isoformat()
+            })
+        pm_q = db.query(PMActivity)
+        if line: pm_q = pm_q.filter(PMActivity.line_name == line.upper())
+        if position: pm_q = pm_q.filter(PMActivity.position_number == position)
+        for pm in pm_q.order_by(PMActivity.planned_date.desc(), PMActivity.id.desc()).limit(300).all():
+            if component and (pm.component or "").upper().replace(" ", "_") != component.upper().replace(" ", "_"):
+                continue
+            results.append({
+                "id": -2000000 - pm.id, "module_code": "DSIR", "event_at": datetime.combine(pm.planned_date, time.min).isoformat(),
+                "line_name": pm.line_name, "position_number": pm.position_number, "stand_code": pm.stand_code,
+                "asset_code": None, "equipment": pm.equipment, "component_type": pm.component,
+                "event_type": pm.activity_type or "PM", "failure_mode": None, "symptoms": pm.remarks,
+                "suspected_cause": None, "confirmed_cause": None, "action_taken": pm.activity,
+                "part_removed": pm.from_value, "part_installed": pm.to_value, "downtime_minutes": None,
+                "operating_hours": None, "source_text": pm.source_text, "ai_summary": None,
+                "ai_confidence": None, "verification_status": "LEGACY_HISTORY", "recorded_by": pm.created_by,
+                "created_at": pm.created_at.isoformat() if pm.created_at else None
+            })
+    if qtext:
+        term = qtext.lower()
+        results = [x for x in results if term in " ".join(str(x.get(k) or "") for k in
+                   ("source_text","symptoms","failure_mode","action_taken","stand_code","equipment","component_type")).lower()]
+    results.sort(key=lambda x: str(x.get("event_at") or ""), reverse=True)
+    results = results[:max(1, min(limit, 1000))]
+    return {"total": len(results), "events": results}
 
 
 @router.post("/ask")
