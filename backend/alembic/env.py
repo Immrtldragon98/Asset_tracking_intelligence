@@ -22,6 +22,7 @@ from app.models.inventory_item import InventoryItem
 from app.models.inventory_transaction import InventoryTransaction
 from app.models.stand_preparation_event import StandPreparationEvent
 from app.models.drive_inventory import DriveInventory
+from app.models.maintenance_schedule import MaintenanceSchedule
 
 
 config = context.config
