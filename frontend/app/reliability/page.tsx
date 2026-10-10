@@ -1,20 +1,19 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import Header from "@/components/layout/Header";
 import { fetchApi } from "@/lib/api";
 
 type EventRow = {id?:number;module_code:string;event_at:string|null;line_name?:string|null;position_number?:number|null;stand_code?:string|null;asset_code?:string|null;equipment?:string|null;component_type?:string|null;event_type:string;failure_mode?:string|null;symptoms?:string|null;suspected_cause?:string|null;confirmed_cause?:string|null;action_taken?:string|null;part_removed?:string|null;part_installed?:string|null;downtime_minutes?:number|null;operating_hours?:number|null;source_text?:string|null;ai_summary?:string|null;ai_confidence?:number|null;verification_status?:string};
 type ComponentRow={id?:number;module_code:string;line_name?:string|null;position_number?:number|null;stand_code?:string|null;asset_code?:string|null;component_type:string;component_side?:string|null;serial_number?:string|null;installed_on:string;removed_on?:string|null;life_days?:number;operating_hours_at_install?:number|null;operating_hours_at_removal?:number|null;observed_life_hours?:number|null;removal_reason?:string|null;condition_on_removal?:string|null;work_done?:string|null};
 const modules=["ALL","DSIR","RMIR","MIR","DIR","SSIR"];
-const componentTypes=["STAND","ROLL","ENTRY_GUIDE","GEARBOX","MOTOR","FLOATING_SHAFT","COUPLER_MOTOR_SIDE","COUPLER_GB_SIDE","BEARING","OIL_SEAL","SLEEVE","SHAFT","SCREW_SHAFT","DRIVE","VFD","OTHER"];
+const componentTypes=["STAND","ROLL","ENTRY_GUIDE","GEARBOX","GB","COUPLER","MOTOR","FLOATING_SHAFT","COUPLER_MOTOR_SIDE","COUPLER_GB_SIDE","BEARING","OIL_SEAL","SLEEVE","SHAFT","SCREW_SHAFT","DRIVE","VFD","OTHER"];
 const eventTypes=["BREAKDOWN","INSPECTION","REPAIR","COMPONENT_CHANGE","STAND_CHANGE","PM","OBSERVATION","OTHER"];
 const today=()=>new Date().toISOString().slice(0,10);
 const fmt=(v?:string|null)=>v?new Date(v).toLocaleString():"Date not recorded";
 const blankComponent=()=>({module_code:"RMIR",line_name:"WRM1",position_number:"1",stand_code:"",asset_code:"",component_type:"GEARBOX",component_side:"",serial_number:"",installed_on:today(),removed_on:"",operating_hours_at_install:"",operating_hours_at_removal:"",removal_reason:"",condition_on_removal:"",work_done:""});
 export default function ReliabilityPage(){
- const search=useSearchParams();
- const [module,setModule]=useState(search.get("module")?.toUpperCase()||"RMIR");
+ const [module,setModule]=useState("RMIR");
+ useEffect(()=>{const requested=new URLSearchParams(window.location.search).get("module")?.toUpperCase();if(requested&&modules.includes(requested))setModule(requested)},[]);
  const [line,setLine]=useState("ALL");
  const [message,setMessage]=useState("");
  const [provider,setProvider]=useState("");
