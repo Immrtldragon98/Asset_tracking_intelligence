@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, Integer, String, Text, func
+from sqlalchemy import Column, Date, DateTime, Float, Integer, String, Text, func
 from app.database.session import Base
 
 
@@ -26,6 +26,8 @@ class DriveInventory(Base):
     voltage = Column(String(40), nullable=True)
     motor_rpm = Column(Float, nullable=True)
     motor_flc_amp = Column(Float, nullable=True)
+    installation_date = Column(Date, nullable=True)
+    running_hours = Column(Float, nullable=False, default=0.0)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
