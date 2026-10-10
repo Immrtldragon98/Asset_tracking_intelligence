@@ -1,7 +1,9 @@
 import io
+from datetime import date
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel, Field
 from openpyxl import load_workbook
 from sqlalchemy.orm import Session
 
@@ -52,6 +54,8 @@ def _serialize(row: DriveInventory):
         "status": "REGISTERED",
         "criticality": "UNASSESSED",
         "notes": row.notes,
+        "installation_date": row.installation_date.isoformat() if row.installation_date else None,
+        "running_hours": row.running_hours or 0,
     }
 
 
@@ -143,3 +147,20 @@ async def import_workbook(file: UploadFile = File(...), db: Session = Depends(ge
     finally:
         workbook.close()
     return {"ok": True, "imported": imported, "skipped": skipped, "total": db.query(DriveInventory).count()}
+
+
+class DriveUsageUpdate(BaseModel):
+    installation_date: date | None = None
+    running_hours: float = Field(ge=0)
+
+
+@router.patch("/drives/{drive_id}/usage")
+def update_drive_usage(drive_id: int, payload: DriveUsageUpdate, db: Session = Depends(get_db)):
+    row = db.query(DriveInventory).filter(DriveInventory.id == drive_id).one_or_none()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Drive record not found.")
+    row.installation_date = payload.installation_date
+    row.running_hours = payload.running_hours
+    db.commit()
+    db.refresh(row)
+    return _serialize(row)
