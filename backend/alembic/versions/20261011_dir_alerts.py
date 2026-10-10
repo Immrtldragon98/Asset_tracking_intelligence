@@ -15,6 +15,7 @@ depends_on = None
 def upgrade():
     op.add_column("drive_inventory", sa.Column("installation_date", sa.Date(), nullable=True))
     op.add_column("drive_inventory", sa.Column("running_hours", sa.Float(), nullable=False, server_default="0"))
+    op.add_column("drive_inventory", sa.Column("operational_status", sa.String(length=24), nullable=False, server_default="RUNNING"))
     op.create_table(
         "maintenance_alerts",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -38,5 +39,6 @@ def downgrade():
     op.drop_index("ix_maintenance_alerts_module_code", table_name="maintenance_alerts")
     op.drop_index("ix_maintenance_alerts_asset_code", table_name="maintenance_alerts")
     op.drop_table("maintenance_alerts")
+    op.drop_column("drive_inventory", "operational_status")
     op.drop_column("drive_inventory", "running_hours")
     op.drop_column("drive_inventory", "installation_date")
