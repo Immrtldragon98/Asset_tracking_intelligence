@@ -17,3 +17,4 @@ from app.models.stand_event import StandCampaignEvent
 from app.models.pm_activity import PMActivity
 from app.models.asset_registry import AssetRegistry
 from app.models.drive_inventory import DriveInventory
+from app.models.maintenance_alert import MaintenanceAlert
