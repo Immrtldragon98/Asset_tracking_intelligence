@@ -1,0 +1,236 @@
+import json
+import re
+from datetime import date, datetime, time
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field, model_validator
+from sqlalchemy.orm import Session
+
+from app.database.session import get_db
+from app.models.reliability_intelligence import ComponentLifecycle, ReliabilityEvent
+from app.services.groq_ai import ask_groq
+
+router = APIRouter()
+MODULES = {"ALL", "DSIR", "RMIR", "MIR", "DIR", "SSIR"}
+EVENT_TYPES = {"BREAKDOWN", "INSPECTION", "REPAIR", "COMPONENT_CHANGE", "STAND_CHANGE", "PM", "OBSERVATION", "OTHER"}
+COMPONENT_TYPES = {"STAND", "ROLL", "ENTRY_GUIDE", "GEARBOX", "GB", "MOTOR", "FLOATING_SHAFT", "COUPLER", "COUPLER_MOTOR_SIDE", "COUPLER_GB_SIDE", "BEARING", "OIL_SEAL", "SLEEVE", "SHAFT", "SCREW_SHAFT", "DRIVE", "VFD", "OTHER"}
+
+
+class ComponentInput(BaseModel):
+    module_code: str = "RMIR"
+    line_name: Optional[str] = None
+    position_number: Optional[int] = Field(default=None, ge=1, le=20)
+    stand_code: Optional[str] = None
+    asset_code: Optional[str] = None
+    component_type: str
+    component_side: Optional[str] = None
+    serial_number: Optional[str] = None
+    installed_on: date
+    removed_on: Optional[date] = None
+    operating_hours_at_install: Optional[float] = Field(default=None, ge=0)
+    operating_hours_at_removal: Optional[float] = Field(default=None, ge=0)
+    removal_reason: Optional[str] = None
+    condition_on_removal: Optional[str] = None
+    work_done: Optional[str] = None
+    source_text: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_values(self):
+        self.module_code = self.module_code.strip().upper()
+        self.component_type = self.component_type.strip().upper().replace(" ", "_")
+        if self.module_code not in MODULES - {"ALL"}:
+            raise ValueError("Select DSIR, RMIR, MIR, DIR or SSIR")
+        if self.component_type not in COMPONENT_TYPES:
+            raise ValueError("Unsupported component type")
+        if self.removed_on and self.removed_on < self.installed_on:
+            raise ValueError("Removed date cannot be before installed date")
+        if self.operating_hours_at_install is not None and self.operating_hours_at_removal is not None and self.operating_hours_at_removal < self.operating_hours_at_install:
+            raise ValueError("Removal operating hours cannot be less than installation hours")
+        return self
+
+
+class EventInput(BaseModel):
+    module_code: str = "RMIR"
+    event_at: datetime
+    line_name: Optional[str] = None
+    position_number: Optional[int] = Field(default=None, ge=1, le=20)
+    stand_code: Optional[str] = None
+    asset_code: Optional[str] = None
+    equipment: Optional[str] = None
+    component_type: Optional[str] = None
+    event_type: str = "MAINTENANCE"
+    failure_mode: Optional[str] = None
+    symptoms: Optional[str] = None
+    suspected_cause: Optional[str] = None
+    confirmed_cause: Optional[str] = None
+    action_taken: Optional[str] = None
+    part_removed: Optional[str] = None
+    part_installed: Optional[str] = None
+    downtime_minutes: Optional[float] = Field(default=None, ge=0)
+    operating_hours: Optional[float] = Field(default=None, ge=0)
+    source_text: Optional[str] = None
+    ai_summary: Optional[str] = None
+    ai_confidence: Optional[float] = Field(default=None, ge=0, le=1)
+    verification_status: str = "VERIFIED"
+
+    @model_validator(mode="after")
+    def validate_values(self):
+        self.module_code = self.module_code.strip().upper()
+        self.event_type = self.event_type.strip().upper()
+        self.verification_status = self.verification_status.strip().upper()
+        if self.module_code not in MODULES - {"ALL"}:
+            raise ValueError("Select a register")
+        if self.event_type not in EVENT_TYPES:
+            raise ValueError("Invalid event type")
+        if self.verification_status not in {"VERIFIED", "AI_REVIEW"}:
+            raise ValueError("Invalid verification status")
+        return self
+
+
+class AnalyseInput(BaseModel):
+    text: str = Field(min_length=5, max_length=20000)
+    module_code: str = "RMIR"
+
+
+def component_out(x):
+    days = ((x.removed_on or date.today()) - x.installed_on).days
+    hours = None
+    if x.operating_hours_at_install is not None and x.operating_hours_at_removal is not None:
+        hours = round(x.operating_hours_at_removal - x.operating_hours_at_install, 1)
+    return {
+        "id": x.id, "module_code": x.module_code, "line_name": x.line_name,
+        "position_number": x.position_number, "stand_code": x.stand_code, "asset_code": x.asset_code,
+        "component_type": x.component_type, "component_side": x.component_side, "serial_number": x.serial_number,
+        "installed_on": x.installed_on.isoformat(), "removed_on": x.removed_on.isoformat() if x.removed_on else None,
+        "life_days": max(days, 0), "operating_hours_at_install": x.operating_hours_at_install,
+        "operating_hours_at_removal": x.operating_hours_at_removal, "observed_life_hours": hours,
+        "removal_reason": x.removal_reason, "condition_on_removal": x.condition_on_removal,
+        "work_done": x.work_done, "source_text": x.source_text, "recorded_by": x.recorded_by,
+    }
+
+
+def event_out(x):
+    return {k: getattr(x, k) for k in [
+        "id","module_code","event_at","line_name","position_number","stand_code","asset_code","equipment",
+        "component_type","event_type","failure_mode","symptoms","suspected_cause","confirmed_cause","action_taken",
+        "part_removed","part_installed","downtime_minutes","operating_hours","source_text","ai_summary",
+        "ai_confidence","verification_status","recorded_by","created_at"
+    ]}
+
+
+@router.get("/components")
+def list_components(module: str = "ALL", line: Optional[str] = None, component_type: Optional[str] = None,
+                    active_only: bool = False, db: Session = Depends(get_db)):
+    q = db.query(ComponentLifecycle)
+    if module.upper() != "ALL": q = q.filter(ComponentLifecycle.module_code == module.upper())
+    if line: q = q.filter(ComponentLifecycle.line_name == line.upper())
+    if component_type: q = q.filter(ComponentLifecycle.component_type == component_type.upper().replace(" ", "_"))
+    if active_only: q = q.filter(ComponentLifecycle.removed_on.is_(None))
+    rows = q.order_by(ComponentLifecycle.installed_on.desc(), ComponentLifecycle.id.desc()).limit(2000).all()
+    return {"total": len(rows), "components": [component_out(x) for x in rows]}
+
+
+@router.post("/components")
+def create_component(payload: ComponentInput, db: Session = Depends(get_db)):
+    row = ComponentLifecycle(**payload.model_dump())
+    db.add(row); db.commit(); db.refresh(row)
+    return component_out(row)
+
+
+@router.get("/events")
+def list_events(module: str = "ALL", line: Optional[str] = None, position: Optional[int] = None,
+                component: Optional[str] = None, qtext: Optional[str] = None, limit: int = 500,
+                db: Session = Depends(get_db)):
+    q = db.query(ReliabilityEvent)
+    if module.upper() != "ALL": q = q.filter(ReliabilityEvent.module_code == module.upper())
+    if line: q = q.filter(ReliabilityEvent.line_name == line.upper())
+    if position: q = q.filter(ReliabilityEvent.position_number == position)
+    if component: q = q.filter(ReliabilityEvent.component_type == component.upper().replace(" ", "_"))
+    if qtext:
+        like = "%" + qtext.strip()[:120] + "%"
+        q = q.filter((ReliabilityEvent.source_text.ilike(like)) | (ReliabilityEvent.symptoms.ilike(like)) |
+                     (ReliabilityEvent.failure_mode.ilike(like)) | (ReliabilityEvent.action_taken.ilike(like)) |
+                     (ReliabilityEvent.stand_code.ilike(like)) | (ReliabilityEvent.equipment.ilike(like)))
+    rows = q.order_by(ReliabilityEvent.event_at.desc(), ReliabilityEvent.id.desc()).limit(max(1, min(limit, 1000))).all()
+    return {"total": len(rows), "events": [event_out(x) for x in rows]}
+
+
+@router.post("/events")
+def create_event(payload: EventInput, db: Session = Depends(get_db)):
+    row = ReliabilityEvent(**payload.model_dump())
+    db.add(row); db.commit(); db.refresh(row)
+    return event_out(row)
+
+
+@router.post("/analyse")
+def analyse_message(payload: AnalyseInput):
+    module = payload.module_code.strip().upper()
+    if module not in MODULES - {"ALL"}: raise HTTPException(400, "Invalid register")
+    prompt = f"""Extract industrial maintenance facts from the source message as strict JSON with one object: {{\"events\":[...],\"components\":[...]}}.
+Never invent facts. Preserve dates only when explicitly written; date format DD/MM/YYYY should be converted to YYYY-MM-DD. If date is absent use null. One event per distinct failure, inspection, repair, or component change. Each event keys: event_at (ISO datetime or date or null), line_name, position_number, stand_code, asset_code, equipment, component_type, event_type (BREAKDOWN/INSPECTION/REPAIR/COMPONENT_CHANGE/STAND_CHANGE/PM/OBSERVATION/OTHER), failure_mode, symptoms, suspected_cause, confirmed_cause, action_taken, part_removed, part_installed, downtime_minutes, operating_hours, ai_summary, ai_confidence (0-1), verification_status (AI_REVIEW). Component types may include STAND, ROLL, ENTRY_GUIDE, GEARBOX, MOTOR, FLOATING_SHAFT, COUPLER_MOTOR_SIDE, COUPLER_GB_SIDE, BEARING, OIL_SEAL, SLEEVE, SHAFT, SCREW_SHAFT, DRIVE, VFD, OTHER. Each component keys: line_name, position_number, stand_code, asset_code, component_type, component_side, serial_number, installed_on, removed_on, operating_hours_at_install, operating_hours_at_removal, removal_reason, condition_on_removal, work_done. Only include a component record when an install/replacement date is explicitly known. Do not treat suspected causes as confirmed. Do not fabricate missing dates, equipment IDs, hours, or people. module_code is {module}.
+SOURCE MESSAGE:
+{payload.text}
+"""
+    try:
+        raw = ask_groq(prompt)
+        match = re.search(r"\{.*\}", raw, re.S)
+        data = json.loads(match.group(0) if match else raw)
+        events = data.get("events", [])
+        components = data.get("components", [])
+        provider = "Groq"
+    except Exception:
+        # Safe fallback: retain the source as an unclassified review item instead of losing the report.
+        events = [{
+            "event_at": None, "line_name": None, "position_number": None, "stand_code": None, "asset_code": None,
+            "equipment": None, "component_type": None, "event_type": "OTHER", "failure_mode": None,
+            "symptoms": payload.text[:2000], "suspected_cause": None, "confirmed_cause": None,
+            "action_taken": None, "part_removed": None, "part_installed": None, "downtime_minutes": None,
+            "operating_hours": None, "ai_summary": "AI extraction unavailable. Review and classify this source message manually.",
+            "ai_confidence": 0.0, "verification_status": "AI_REVIEW"
+        }]
+        components = []
+        provider = "manual-review-fallback"
+    clean_events = []
+    for e in events:
+        e["module_code"] = module
+        e["verification_status"] = "AI_REVIEW"
+        if not e.get("event_at"): e["event_at"] = None
+        clean_events.append(e)
+    for c in components: c["module_code"] = module
+    return {"provider": provider, "events": clean_events, "components": components,
+            "source_text": payload.text, "notice": "Review every extracted field. Nothing is saved until confirmation."}
+
+
+class ConfirmInput(BaseModel):
+    events: list[dict] = []
+    components: list[dict] = []
+    source_text: Optional[str] = None
+
+
+@router.post("/confirm")
+def confirm_analysis(payload: ConfirmInput, db: Session = Depends(get_db)):
+    saved_events, saved_components, skipped = [], [], []
+    for idx, raw in enumerate(payload.events):
+        try:
+            raw = {**raw, "source_text": payload.source_text or raw.get("source_text"), "verification_status": "VERIFIED"}
+            if not raw.get("event_at"): raise ValueError("Event date is missing; add a date before saving verified history.")
+            parsed = EventInput(**raw)
+            row = ReliabilityEvent(**parsed.model_dump())
+            db.add(row); db.flush()
+            saved_events.append(row.id)
+        except Exception as exc:
+            skipped.append({"kind":"event","index":idx,"reason":str(exc)})
+    for idx, raw in enumerate(payload.components):
+        try:
+            raw = {**raw, "source_text": payload.source_text or raw.get("source_text")}
+            if not raw.get("installed_on"): raise ValueError("Installation date is missing; component life cannot be calculated without it.")
+            parsed = ComponentInput(**raw)
+            row = ComponentLifecycle(**parsed.model_dump())
+            db.add(row); db.flush()
+            saved_components.append(row.id)
+        except Exception as exc:
+            skipped.append({"kind":"component","index":idx,"reason":str(exc)})
+    db.commit()
+    return {"saved_events": saved_events, "saved_components": saved_components, "skipped": skipped,
+            "message": "Verified records saved. AI source text retained for audit."}
