@@ -28,6 +28,7 @@ class DriveInventory(Base):
     motor_flc_amp = Column(Float, nullable=True)
     installation_date = Column(Date, nullable=True)
     running_hours = Column(Float, nullable=False, default=0.0)
+    operational_status = Column(String(24), nullable=False, default="RUNNING")
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
