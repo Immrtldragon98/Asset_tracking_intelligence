@@ -20,3 +20,5 @@ from app.models.drive_inventory import DriveInventory
 from app.models.maintenance_alert import MaintenanceAlert
 
 from app.models.maintenance_schedule import MaintenanceSchedule
+
+from app.models.reliability_intelligence import ComponentLifecycle, ReliabilityEvent
