@@ -7,6 +7,7 @@ import { fetchApi } from "@/lib/api";
 
 type Config={module:string;area:string;lines:Record<string,string[]>;total_running:number;updated_at?:string};
 type Asset={asset_code:string;asset_type:string;parent_id:number|null;installation_date:string|null;operating_hours:number;status:string;is_running?:boolean};
+type Life={id:number;module_code:string;line_name?:string;position_number?:number;stand_code?:string;component_type:string;component_side?:string;serial_number?:string;installed_on:string;removed_on?:string|null;life_days:number;observed_life_hours?:number|null;removal_reason?:string|null};
 
 const components=[
  {label:"Gearbox",key:"GEARBOX",icon:Cog},
@@ -19,8 +20,9 @@ const components=[
 export default function RMIRPage(){
  const [config,setConfig]=useState<Config|null>(null);
  const [assets,setAssets]=useState<Asset[]>([]);
+ const [componentLife,setComponentLife]=useState<Life[]>([]);
  const [loading,setLoading]=useState(true); const [error,setError]=useState("");
- const load=async()=>{setLoading(true);try{setError("");const [c,a]=await Promise.all([fetchApi("/assets/running-config/RMIR"),fetchApi("/assets/RMIR")]);setConfig(c);setAssets(a.assets||[]);}catch(e){setError(e instanceof Error?e.message:"Could not load RMIR running configuration")}finally{setLoading(false)}};
+ const load=async()=>{setLoading(true);try{setError("");const [c,a,l]=await Promise.all([fetchApi("/assets/running-config/RMIR"),fetchApi("/assets/RMIR"),fetchApi("/reliability/components?module=RMIR")]);setConfig(c);setAssets(a.assets||[]);setComponentLife(l.components||[]);}catch(e){setError(e instanceof Error?e.message:"Could not load RMIR running configuration")}finally{setLoading(false)}};
  useEffect(()=>{load()},[]);
  return <main className="min-h-screen bg-[#080D16] text-slate-100">
   <header className="border-b border-[#26354a] bg-[#0b111d] px-4 md:px-7 py-4"><div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
@@ -46,6 +48,10 @@ export default function RMIRPage(){
       </article>)}</div>
      </div>)}
     </div>}
+   </section>
+   <section className="mt-5 rounded-xl border border-[#253247] bg-[#101827] overflow-hidden">
+    <div className="px-4 py-4 border-b border-[#253247] flex flex-wrap items-center justify-between gap-3"><div><div className="text-[10px] uppercase tracking-[.12em] text-slate-500 font-bold">Component lifecycle</div><div className="text-lg font-semibold text-white mt-1">Installed dates · GB, motor, floating shaft & couplers</div><p className="text-xs text-slate-400 mt-1">Motor-side and gearbox-side couplers are tracked separately. Add missing installation dates in Reliability Intelligence.</p></div><Link href="/reliability?module=RMIR" className="dsr-btn">Open reliability workspace →</Link></div>
+    <div className="overflow-x-auto"><table className="dsr-table min-w-[850px]"><thead><tr>{["Line","Position","Stand","Component","Side","Installed","Age (days)","Life (hours)"].map(x=><th className="dsr-th" key={x}>{x}</th>)}</tr></thead><tbody>{componentLife.filter(x=>!x.removed_on).map(x=><tr key={x.id}><td className="dsr-td">{x.line_name||"—"}</td><td className="dsr-td">{x.position_number??"—"}</td><td className="dsr-td">{x.stand_code||"—"}</td><td className="dsr-td font-semibold">{x.component_type.replaceAll("_"," ")}</td><td className="dsr-td">{x.component_side||"—"}</td><td className="dsr-td">{x.installed_on}</td><td className="dsr-td">{x.life_days}</td><td className="dsr-td">{x.observed_life_hours??"Meter readings needed"}</td></tr>)}{!componentLife.some(x=>!x.removed_on)&&<tr><td colSpan={8} className="dsr-empty">No component installation dates have been recorded yet.</td></tr>}</tbody></table></div>
    </section>
    <section className="mt-5 rounded-xl border border-[#253247] bg-[#101827] p-4"><div className="flex items-center gap-2"><Activity className="w-4 h-4 text-emerald-400"/><div><div className="text-sm font-semibold text-white">RMIR running-status rule</div><div className="text-xs text-slate-500 mt-1">The current plant configuration is authoritative for which RM stands are running. Asset records continue to supply installation, operating-hour and component details when entered.</div></div></div></section>
    <div className="mt-3 text-xs text-slate-500">Configured current plant lineup · Last configured: 08 Oct 2026 · Register asset records available: {assets.length}</div>
