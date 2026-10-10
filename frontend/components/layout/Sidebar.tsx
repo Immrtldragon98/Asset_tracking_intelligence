@@ -55,6 +55,7 @@ const DSIR: NavGroup[] = [
   ]},
   { name: "Maintenance", items: [
     { name: "Maintenance Data", href: "/pm-schedule", icon: CalendarDays },
+    { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
     { name: "Spare Life", href: "/inventory", icon: Package },
   ]},
   { name: "Intelligence", items: [
@@ -80,6 +81,7 @@ const RMIR: NavGroup[] = [
   ]},
   { name: "Maintenance", items: [
     { name: "Maintenance Data", href: "/rmir/maintenance", icon: CalendarDays },
+    { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
     { name: "Spare Life", href: "/rmir/spare-life", icon: Package },
   ]},
   { name: "Intelligence", items: [
@@ -93,7 +95,7 @@ const RMIR: NavGroup[] = [
 const MIR: NavGroup[] = [
   { name: "Overview", items: [{ name: "Running Status", href: "/mir", icon: Gauge }] },
   { name: "Issues", items: [{ name: "Vibration / Temperature / Torque", href: "/mir/issues", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/mir/maintenance", icon: CalendarDays }] },
+  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/mir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
   { name: "Intelligence", items: [{ name: "AI / Intelligence", href: "/mir/intelligence", icon: BrainCircuit }] },
   { name: "History", items: [{ name: "History", href: "/mir/history", icon: History }] },
 ];
@@ -101,14 +103,14 @@ const MIR: NavGroup[] = [
 const DIR: NavGroup[] = [
   { name: "Overview", items: [{ name: "Running Status", href: "/dir", icon: Gauge }] },
   { name: "Alerts", items: [{ name: "Alerts", href: "/dir/alerts", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/dir/maintenance", icon: CalendarDays }] },
+  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/dir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
   { name: "History", items: [{ name: "History", href: "/dir/history", icon: History }] },
 ];
 
 const SSIR: NavGroup[] = [
   { name: "Overview", items: [{ name: "Running Status", href: "/ssir", icon: Gauge }] },
   { name: "Alerts", items: [{ name: "Alerts", href: "/ssir/alerts", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/ssir/maintenance", icon: CalendarDays }] },
+  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/ssir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
   { name: "Intelligence", items: [{ name: "AI / Intelligence", href: "/ssir/intelligence", icon: BrainCircuit }] },
   { name: "History", items: [{ name: "History", href: "/ssir/history", icon: History }] },
 ];
