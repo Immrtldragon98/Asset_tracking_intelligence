@@ -40,7 +40,7 @@ const MODULES = [
   { code: "RMIR", label: "Roughing Mill", href: "/rmir" },
   { code: "MIR", label: "Motors", href: "/mir" },
   { code: "DIR", label: "Drives", href: "/dir" },
-  { code: "SSIR", label: "Screw Shafts", href: "/ssir" },
+  { code: "SSIR", label: "Critical Assets", href: "/ssir" },
 ];
 
 const DSIR: NavGroup[] = [
