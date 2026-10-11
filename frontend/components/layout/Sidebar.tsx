@@ -49,25 +49,25 @@ const DSIR: NavGroup[] = [
     { name: "Running Stands", href: "/running-stands", icon: Gauge },
     { name: "Alerts", href: "/alerts", icon: Zap },
   ]},
-  { name: "Operations", items: [
+  { name: "Record changes", items: [
     { name: "Stand Change", href: "/operations", icon: Wrench },
     { name: "Entry Guide Change", href: "/entry-guides", icon: Settings2 },
   ]},
   { name: "Maintenance", items: [
     { name: "Maintenance Data", href: "/pm-schedule", icon: CalendarDays },
     { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
-    { name: "Spare Life", href: "/inventory", icon: Package },
+    { name: "Spare service life", href: "/inventory", icon: Package },
   ]},
-  { name: "Intelligence", items: [
-    { name: "AI / Intelligence", href: "/intelligence", icon: BrainCircuit },
-    { name: "Reliability Intelligence", href: "/reliability?module=DSIR", icon: BrainCircuit },
+  { name: "Insights", items: [
+    { name: "Equipment insights", href: "/intelligence", icon: BrainCircuit },
+    { name: "Equipment life & history", href: "/reliability?module=DSIR", icon: BrainCircuit },
     { name: "Investigation", href: "/investigation", icon: Zap },
   ]},
   { name: "History", items: [
-    { name: "Activity History", href: "/activity", icon: History },
+    { name: "Change history", href: "/activity", icon: History },
     { name: "Export History", href: "/reports", icon: FileText },
     { name: "Import Report", href: "/import-report", icon: FileText },
-    { name: "Historical Data", href: "/historical-import", icon: History },
+    { name: "Import old records", href: "/historical-import", icon: History },
   ]},
 ];
 
@@ -83,11 +83,11 @@ const RMIR: NavGroup[] = [
   { name: "Maintenance", items: [
     { name: "Maintenance Data", href: "/rmir/maintenance", icon: CalendarDays },
     { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
-    { name: "Spare Life", href: "/rmir/spare-life", icon: Package },
+    { name: "Spare service life", href: "/rmir/spare-life", icon: Package },
   ]},
   { name: "Intelligence", items: [
-    { name: "AI / Intelligence", href: "/rmir/intelligence", icon: BrainCircuit },
-    { name: "Reliability Intelligence", href: "/reliability?module=RMIR", icon: BrainCircuit },
+    { name: "Equipment insights", href: "/rmir/intelligence", icon: BrainCircuit },
+    { name: "Equipment life & history", href: "/reliability?module=RMIR", icon: BrainCircuit },
   ]},
   { name: "History", items: [
     { name: "History", href: "/rmir/history", icon: History },
@@ -95,25 +95,25 @@ const RMIR: NavGroup[] = [
 ];
 
 const MIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Running Status", href: "/mir", icon: Gauge }] },
-  { name: "Issues", items: [{ name: "Vibration / Temperature / Torque", href: "/mir/issues", icon: Zap }] },
+  { name: "Overview", items: [{ name: "Equipment status", href: "/mir", icon: Gauge }] },
+  { name: "Alerts & issues", items: [{ name: "Motor issues", href: "/mir/issues", icon: Zap }] },
   { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/mir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
-  { name: "Intelligence", items: [{ name: "AI / Intelligence", href: "/mir/intelligence", icon: BrainCircuit }, { name: "Reliability Intelligence", href: "/reliability?module=MIR", icon: BrainCircuit }] },
+  { name: "Intelligence", items: [{ name: "Equipment insights", href: "/mir/intelligence", icon: BrainCircuit }, { name: "Equipment life & history", href: "/reliability?module=MIR", icon: BrainCircuit }] },
   { name: "History", items: [{ name: "History", href: "/mir/history", icon: History }] },
 ];
 
 const DIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Running Status", href: "/dir", icon: Gauge }] },
+  { name: "Overview", items: [{ name: "Equipment status", href: "/dir", icon: Gauge }] },
   { name: "Alerts", items: [{ name: "Alerts", href: "/dir/alerts", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/dir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }, { name: "Reliability Intelligence", href: "/reliability?module=DIR", icon: BrainCircuit }] },
+  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/dir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }, { name: "Equipment life & history", href: "/reliability?module=DIR", icon: BrainCircuit }] },
   { name: "History", items: [{ name: "History", href: "/dir/history", icon: History }] },
 ];
 
 const SSIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Running Status", href: "/ssir", icon: Gauge }] },
+  { name: "Overview", items: [{ name: "Equipment status", href: "/ssir", icon: Gauge }] },
   { name: "Alerts", items: [{ name: "Alerts", href: "/ssir/alerts", icon: Zap }] },
   { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/ssir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
-  { name: "Intelligence", items: [{ name: "AI / Intelligence", href: "/ssir/intelligence", icon: BrainCircuit }, { name: "Reliability Intelligence", href: "/reliability?module=SSIR", icon: BrainCircuit }] },
+  { name: "Intelligence", items: [{ name: "Equipment insights", href: "/ssir/intelligence", icon: BrainCircuit }, { name: "Equipment life & history", href: "/reliability?module=SSIR", icon: BrainCircuit }] },
   { name: "History", items: [{ name: "History", href: "/ssir/history", icon: History }] },
 ];
 
