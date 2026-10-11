@@ -1,49 +1,5 @@
 "use client";
-
-import Link from "next/link";
-import { Factory, Cog, Cpu, Zap, Wrench, ArrowRight } from "lucide-react";
-
-const registers = [
-  { code: "DSIR", title: "Digital Stand Intelligent Register", subtitle: "Finishing Mill · Stand Register", href: "/dsir", icon: Factory, state: "OPEN REGISTER" },
-  { code: "RMIR", title: "Roughing Mill Intelligent Register", subtitle: "Roughing Mill · 5 Stands", href: "/rmir", icon: Cog, state: "OPEN REGISTER" },
-  { code: "MIR", title: "Motor Intelligent Register", subtitle: "Motor register planned", href: "/mir", icon: Cpu, state: "REGISTER PLANNED" },
-  { code: "DIR", title: "Drive Intelligent Register", subtitle: "Equipment mapping pending", href: "/dir", icon: Zap, state: "MAPPING PENDING" },
-  { code: "SSIR", title: "Screw Shaft Intelligent Register", subtitle: "Screw-shaft register planned", href: "/ssir", icon: Wrench, state: "REGISTER PLANNED" },
-];
-
-export default function DashboardPage() {
-  return (
-    <main className="min-h-screen flex items-center justify-center px-5 py-10 bg-[#080D16]">
-      <div className="w-full max-w-5xl">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.22em] text-slate-500 font-bold">Plant Maintenance Platform</div>
-          <h1 className="mt-3 text-3xl md:text-5xl font-bold tracking-tight text-white">Asset Tracking Intelligence</h1>
-          <p className="mt-3 text-sm md:text-base text-slate-400">Select an intelligent register to enter its dedicated plant system.</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {registers.map((register) => {
-            const Icon = register.icon;
-            const ready = register.state === "OPEN REGISTER";
-            return (
-              <Link key={register.code} href={register.href} className="group min-h-[190px] rounded-xl border border-[#26354a] bg-[#101827] p-5 flex flex-col justify-between hover:border-[#4EA1FF]/70 hover:bg-[#131e30] transition">
-                <div>
-                  <div className="w-11 h-11 rounded-xl border border-[#33445b] bg-[#0b111d] grid place-items-center">
-                    <Icon className="w-5 h-5 text-slate-300 group-hover:text-[#4EA1FF]" />
-                  </div>
-                  <div className="mt-5 text-xl font-bold text-white">{register.code}</div>
-                  <div className="mt-1 text-sm font-semibold text-slate-200">{register.title}</div>
-                  <div className="mt-2 text-xs text-slate-500">{register.subtitle}</div>
-                </div>
-                <div className="mt-5 flex items-center justify-between text-xs">
-                  <span className={ready ? "text-emerald-400 font-semibold" : "text-slate-500 font-semibold"}>{register.state}</span>
-                  <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-[#4EA1FF]" />
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-        <div className="mt-8 text-center text-[11px] text-slate-600">One shared asset identity and intelligence core · Five plant registers</div>
-      </div>
-    </main>
-  );
-}
+import Link from "next/link";import {Factory,Cog,Cpu,Zap,Wrench,ArrowRight,CalendarClock,BrainCircuit,ClipboardList} from "lucide-react";
+const registers=[{code:"DSIR",title:"Digital Stand Intelligent Register",subtitle:"Finishing mill · stand life, preparation and entry guides",href:"/dsir",icon:Factory,tag:"STAND REGISTER"},{code:"RMIR",title:"Roughing Mill Intelligent Register",subtitle:"15 running stands · stand and entry-guide change history",href:"/rmir",icon:Cog,tag:"STAND REGISTER"},{code:"MIR",title:"Motor Intelligent Register",subtitle:"16 motor assets · windings, bearings and couplings",href:"/mir",icon:Cpu,tag:"MOTOR REGISTER"},{code:"DIR",title:"Drive Intelligent Register",subtitle:"VFDs, operating status and drive maintenance",href:"/dir",icon:Zap,tag:"DRIVE REGISTER"},{code:"SSIR",title:"Other Critical Asset Register",subtitle:"Screw shafts, lubrication pumps and hydraulic pumps",href:"/ssir",icon:Wrench,tag:"CRITICAL ASSETS"}];
+const tools=[{title:"Scheduled Maintenance",text:"PM plans, belt changes and shutdown work",href:"/maintenance",icon:CalendarClock},{title:"Reliability Intelligence",text:"Component life, breakdowns and AI-assisted history",href:"/reliability",icon:BrainCircuit},{title:"Maintenance Planning",text:"Upcoming work and maintenance coordination",href:"/planning",icon:ClipboardList}];
+export default function DashboardPage(){return <main className="min-h-screen bg-[#080D16] text-slate-100 px-4 py-8 md:px-8 md:py-12"><div className="max-w-7xl mx-auto"><header className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 mb-8"><div><div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[.22em] text-slate-500 font-bold">Plant Maintenance Platform · Unified Asset Core</div><h1 className="mt-3 text-3xl md:text-5xl font-bold tracking-tight text-white">Asset Tracking Intelligence</h1><p className="mt-3 max-w-2xl text-sm md:text-base text-slate-400">Track equipment identity, component changes, service life, breakdown history and planned maintenance across the plant.</p></div><div className="rounded-xl border border-[#26354a] bg-[#101827] p-4 min-w-48"><div className="text-xs text-slate-500">Platform model</div><div className="text-lg font-semibold mt-1">5 intelligent registers</div><div className="text-xs text-emerald-300 mt-1">Shared lifecycle & reliability history</div></div></header><section><div className="flex items-center justify-between mb-3"><h2 className="font-bold text-lg">Intelligent Registers</h2><span className="text-xs text-slate-500">Select a register to open</span></div><div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">{registers.map(r=>{const Icon=r.icon;return <Link key={r.code} href={r.href} className="group min-h-[230px] rounded-xl border border-[#26354a] bg-[#101827] p-5 flex flex-col justify-between hover:border-sky-500/60 hover:bg-[#131e30] transition"><div><div className="w-11 h-11 rounded-xl border border-[#33445b] bg-[#0b111d] grid place-items-center"><Icon className="w-5 h-5 text-slate-300 group-hover:text-sky-400"/></div><div className="mt-5 text-xs tracking-widest font-bold text-sky-300">{r.code}</div><div className="mt-2 text-base font-bold text-white">{r.title}</div><div className="mt-2 text-xs text-slate-400 leading-relaxed">{r.subtitle}</div></div><div className="mt-5 flex items-center justify-between text-[10px] font-bold text-slate-500"><span>{r.tag}</span><ArrowRight className="w-4 h-4 group-hover:text-sky-400"/></div></Link>})}</div></section><section className="mt-8"><h2 className="font-bold text-lg mb-3">Shared Maintenance & Intelligence</h2><div className="grid md:grid-cols-3 gap-3">{tools.map(t=>{const Icon=t.icon;return <Link key={t.href} href={t.href} className="rounded-xl border border-[#26354a] bg-[#101827] p-4 flex items-start gap-3 hover:border-sky-500/60 transition"><div className="w-10 h-10 shrink-0 rounded-lg bg-[#0b111d] border border-[#33445b] grid place-items-center"><Icon className="w-5 h-5 text-slate-300"/></div><div><div className="font-semibold text-white">{t.title}</div><div className="text-xs text-slate-400 mt-1">{t.text}</div></div><ArrowRight className="w-4 h-4 text-slate-500 ml-auto"/></Link>})}</div></section><footer className="mt-8 text-center text-[11px] text-slate-600">Auditable lifecycle records · No fabricated installation dates or predicted life without evidence</footer></div></main>}
