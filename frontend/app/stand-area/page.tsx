@@ -66,6 +66,12 @@ export default function StandAreaPage() {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<any>(null);
   const [componentStand, setComponentStand] = useState<Stand | null>(null);
+  const [transitionStand, setTransitionStand] = useState<Stand | null>(null);
+  const [transitionBy, setTransitionBy] = useState("");
+  const [transitionRemarks, setTransitionRemarks] = useState("");
+  const [newStandOpen, setNewStandOpen] = useState(false);
+  const [newStandCode, setNewStandCode] = useState("");
+  const [newStandLife, setNewStandLife] = useState("0");
   const [user, setUser] = useState<AuthUser | null>(null);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
     HYDROTEST: true,
@@ -117,30 +123,9 @@ export default function StandAreaPage() {
     const target = NEXT[stand.current_status];
     if (!target) return;
 
-    const who = window
-      .prompt(`Who completed ${LABEL[target]} for ${stand.code}?`, user?.username || "")
-      ?.trim();
-    if (!who) return;
-
-    const remarks = window.prompt("Remarks (optional)")?.trim() || null;
-
-    setSaving(true);
-    try {
-      await fetchApi("/operations/stands/status", {
-        method: "POST",
-        body: JSON.stringify({
-          stand_code: stand.code,
-          status: target,
-          updated_by: who,
-          remarks,
-        }),
-      });
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Update failed");
-    } finally {
-      setSaving(false);
-    }
+    setTransitionStand(stand);
+    setTransitionBy(user?.username || "");
+    setTransitionRemarks("");
   }
 
   async function addStand() {
@@ -149,24 +134,9 @@ export default function StandAreaPage() {
       return;
     }
 
-    const code = window.prompt("New stand code (example: 4E)")?.trim();
-    if (!code) return;
-
-    const life = Number(window.prompt("Existing life hours, if any", "0") || "0");
-    if (Number.isNaN(life) || life < 0) {
-      setError("Life hours must be 0 or more.");
-      return;
-    }
-
-    try {
-      await fetchApi("/stands/", {
-        method: "POST",
-        body: JSON.stringify({ code, initial_life_hours: life }),
-      });
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not add stand");
-    }
+    setNewStandCode("");
+    setNewStandLife("0");
+    setNewStandOpen(true);
   }
 
   async function openStand(stand: Stand) {
@@ -328,6 +298,48 @@ export default function StandAreaPage() {
           )}
         </div>
       </main>
+
+      {transitionStand && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={() => setTransitionStand(null)}>
+          <form className="w-full max-w-lg space-y-4 rounded-t-2xl border border-slate-700 bg-[#0d131b] p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()} onSubmit={async (e) => {
+            e.preventDefault();
+            if (!transitionBy.trim()) return;
+            const target = NEXT[transitionStand.current_status];
+            if (!target) return;
+            setSaving(true); setError("");
+            try {
+              await fetchApi("/operations/stands/status", { method: "POST", body: JSON.stringify({ stand_code: transitionStand.code, status: target, updated_by: transitionBy.trim(), remarks: transitionRemarks.trim() || null }) });
+              setTransitionStand(null); await load();
+            } catch (e) { setError(e instanceof Error ? e.message : "Update failed"); }
+            finally { setSaving(false); }
+          }}>
+            <div><div className="dsr-kicker">Update readiness</div><h2 className="text-lg font-bold text-white">{transitionStand.code}: {LABEL[NEXT[transitionStand.current_status] || ""] || "Next stage"}</h2><p className="mt-1 text-sm text-slate-300">Enter who completed this step. Add a note only if needed.</p></div>
+            <label className="block text-sm text-slate-200">Completed by <input autoFocus required className="input-class mt-1" value={transitionBy} onChange={(e) => setTransitionBy(e.target.value)} placeholder="Operator / technician name" /></label>
+            <label className="block text-sm text-slate-200">Remarks (optional) <textarea className="input-class mt-1" rows={3} value={transitionRemarks} onChange={(e) => setTransitionRemarks(e.target.value)} placeholder="Inspection note or observation" /></label>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" className="dsr-btn" onClick={() => setTransitionStand(null)}>Cancel</button><button disabled={saving} className="dsr-btn-primary">{saving ? "Saving…" : "Confirm update"}</button></div>
+          </form>
+        </div>
+      )}
+
+      {newStandOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onClick={() => setNewStandOpen(false)}>
+          <form className="w-full max-w-lg space-y-4 rounded-t-2xl border border-slate-700 bg-[#0d131b] p-5 sm:rounded-xl" onClick={(e) => e.stopPropagation()} onSubmit={async (e) => {
+            e.preventDefault(); const life = Number(newStandLife);
+            if (!newStandCode.trim() || !Number.isFinite(life) || life < 0) { setError("Enter a stand code and valid life hours (0 or more)."); return; }
+            setSaving(true); setError("");
+            try {
+              await fetchApi("/stands/", { method: "POST", body: JSON.stringify({ code: newStandCode.trim(), initial_life_hours: life }) });
+              setNewStandOpen(false); await load();
+            } catch (e) { setError(e instanceof Error ? e.message : "Could not add stand"); }
+            finally { setSaving(false); }
+          }}>
+            <div><div className="dsr-kicker">Register equipment</div><h2 className="text-lg font-bold text-white">Add a stand</h2><p className="mt-1 text-sm text-slate-300">Use the stand code exactly as it appears in the register.</p></div>
+            <label className="block text-sm text-slate-200">Stand code <input autoFocus required className="input-class mt-1" value={newStandCode} onChange={(e) => setNewStandCode(e.target.value)} placeholder="e.g. 4E" /></label>
+            <label className="block text-sm text-slate-200">Existing life (hours) <input required min="0" step="1" type="number" className="input-class mt-1" value={newStandLife} onChange={(e) => setNewStandLife(e.target.value)} /></label>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" className="dsr-btn" onClick={() => setNewStandOpen(false)}>Cancel</button><button disabled={saving} className="dsr-btn-primary">{saving ? "Saving…" : "Add stand"}</button></div>
+          </form>
+        </div>
+      )}
 
       {selected && (
         <div
