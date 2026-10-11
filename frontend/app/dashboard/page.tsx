@@ -8,11 +8,18 @@ import {
 
 const tasks = [
   {
-    title: "Record an equipment change",
-    description: "Log a stand, entry guide, motor, drive or other asset change.",
+    title: "Record a stand change",
+    description: "Record a roughing-mill stand change or entry-guide replacement.",
     href: "/rmir/stand-change",
     icon: Wrench,
     label: "MOST USED",
+  },
+  {
+    title: "Update a motor or critical asset",
+    description: "Open the motor or critical-asset register to record a change.",
+    href: "/mir",
+    icon: Cpu,
+    label: "UPDATE ASSET",
   },
   {
     title: "Check running equipment",
