@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   ArrowRight, ClipboardCheck, Factory, Wrench, CalendarClock,
-  History, Cpu, Zap, Boxes, CircleHelp, ClipboardList, Gauge,
+  History, Cpu, Zap, Boxes, ClipboardList, Gauge,
   ShieldCheck, Activity, Database, Search,
 } from "lucide-react";
 
