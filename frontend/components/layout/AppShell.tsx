@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 
 const DSIR_PATHS = [
+  "/dashboard",
   "/dsir",
   "/running-stands",
   "/stand-area",
