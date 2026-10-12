@@ -29,3 +29,6 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Build Next.js application
         run: npm run build
+      - name: Verify frontend Docker image
+        working-directory: .
+        run: docker build -f frontend/Dockerfile frontend
