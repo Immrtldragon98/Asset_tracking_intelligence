@@ -2,8 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
+import WorkspaceBar from "@/components/layout/WorkspaceBar";
 
 const DSIR_PATHS = [
+  "/dashboard",
   "/dsir",
   "/running-stands",
   "/stand-area",
@@ -39,7 +41,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return showNavigation ? (
     <div className="min-h-screen">
       <Sidebar />
-      <main className="app-shell-content">{children}</main>
+      <main className="app-shell-content"><WorkspaceBar />{children}</main>
     </div>
   ) : (
     <div className="min-h-screen">{children}</div>
