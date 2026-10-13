@@ -38,6 +38,7 @@ export default function WorkspaceBar() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const segments = pathname.split("/").filter(Boolean);
   const current = destinations.find(item => item.href === pathname);
@@ -58,6 +59,7 @@ export default function WorkspaceBar() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
   useEffect(() => { if (open) inputRef.current?.focus(); else setQuery(""); }, [open]);
+  useEffect(() => { setActiveIndex(0); }, [query]);
   useEffect(() => { setOpen(false); }, [pathname]);
 
   const navigate = (href: string) => { setOpen(false); router.push(href); };
@@ -87,17 +89,17 @@ export default function WorkspaceBar() {
           <div className="workspace-search-input-row">
             <Search size={20} aria-hidden="true" />
             <input ref={inputRef} value={query} onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter" && results.length) navigate(results[0].href); }}
+              onKeyDown={e => { if (e.key === "ArrowDown") { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, results.length - 1)); } if (e.key === "ArrowUp") { e.preventDefault(); setActiveIndex(i => Math.max(0, i - 1)); } if (e.key === "Enter" && results.length) navigate(results[activeIndex]?.href ?? results[0].href); }}
               placeholder="Search registers, maintenance, history..." aria-label="Search pages" />
             <button type="button" onClick={() => setOpen(false)} aria-label="Close search"><X size={19}/></button>
           </div>
           <div className="workspace-search-results">
-            {results.map(item => <button type="button" key={item.href} onClick={() => navigate(item.href)} className="workspace-search-result">
+            {results.map((item, index) => <button type="button" key={item.href} onClick={() => navigate(item.href)} className={`workspace-search-result ${activeIndex === index ? "workspace-search-selected" : ""}`}>
               <span><small>{item.group}</small><strong>{item.title}</strong></span><ArrowRight size={16} aria-hidden="true"/>
             </button>)}
             {!results.length && <p className="workspace-search-empty">No matching pages. Try a register name or maintenance.</p>}
           </div>
-          <footer className="workspace-search-help"><Command size={14}/> Press Ctrl+K to open search · Enter to open the first result · Esc to close</footer>
+          <footer className="workspace-search-help"><Command size={14}/> Press Ctrl+K to open search · ↑↓ to select · Enter to open · Esc to close</footer>
         </section>
       </div>}
     </>
