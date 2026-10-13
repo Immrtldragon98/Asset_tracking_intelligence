@@ -301,3 +301,14 @@ a{transition:color .16s ease,border-color .16s ease,background-color .16s ease}
 @media(max-width:640px){.workspace-bar{gap:8px;align-items:flex-start}.workspace-search-trigger{padding:7px}.workspace-search-trigger span,.workspace-search-trigger kbd{display:none}.workspace-breadcrumb{font-size:11px}}
 
 .workspace-search-selected{background:#20364a;box-shadow:inset 3px 0 #44d7c5}
+
+
+/* Maintenance schedule: semantic status and responsive record grid */
+.maintenance-status{display:inline-flex;align-items:center;white-space:nowrap;padding:5px 9px;border-radius:999px;border:1px solid #3b4b61;background:#1b293a;color:#c7d4e3;font-size:11px;font-weight:700;letter-spacing:.035em}
+.maintenance-status-planned,.maintenance-status-approved{background:rgba(85,155,240,.12);border-color:rgba(85,155,240,.3);color:#a9cfff}
+.maintenance-status-in_progress{background:rgba(251,191,36,.12);border-color:rgba(251,191,36,.3);color:#f8d18c}
+.maintenance-status-completed{background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.3);color:#8aebc3}
+.maintenance-status-deferred,.maintenance-status-cancelled{background:rgba(248,113,113,.10);border-color:rgba(248,113,113,.25);color:#f8a6a6}
+.dsr-table{width:100%;border-collapse:collapse}
+.dsr-th{white-space:nowrap}
+.dsr-table-wrap{max-width:100%;overflow-x:auto}
