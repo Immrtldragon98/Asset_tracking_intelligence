@@ -299,3 +299,5 @@ a{transition:color .16s ease,border-color .16s ease,background-color .16s ease}
 .workspace-search-empty{padding:20px;text-align:center;color:#9fb2c4}
 .workspace-search-help{display:flex;align-items:center;gap:8px;padding:11px 16px;border-top:1px solid #30455c;color:#8ba2b7;font-size:11px}
 @media(max-width:640px){.workspace-bar{gap:8px;align-items:flex-start}.workspace-search-trigger{padding:7px}.workspace-search-trigger span,.workspace-search-trigger kbd{display:none}.workspace-breadcrumb{font-size:11px}}
+
+.workspace-search-selected{background:#20364a;box-shadow:inset 3px 0 #44d7c5}
