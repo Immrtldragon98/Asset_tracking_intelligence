@@ -1,4 +1,5 @@
 "use client";
+import RegisterContext from "@/components/workspace/RegisterContext";
 
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -78,7 +79,7 @@ export default function DIRPage(){
  const lineFor=(a:Drive)=>{const s=(a.area||"").toUpperCase().replace(/[^A-Z0-9]/g,"");return s.includes("WRM1")?"WRM1":s.includes("WRM2")?"WRM2":s.includes("WRM3")?"WRM3":null;};
  const lineSummary=["WRM1","WRM2","WRM3"].map(line=>{const drives=assets.filter(a=>lineFor(a)===line);return {line,drives,total:drives.length,running:drives.filter(a=>(a.operational_status||"RUNNING")==="RUNNING").length,stopped:drives.filter(a=>a.operational_status==="STOPPED").length,maintenance:drives.filter(a=>a.operational_status==="MAINTENANCE").length,fault:drives.filter(a=>a.operational_status==="FAULT").length};});
  const withSpare=assets.filter(a=>a.spare_available).length;
- return <main className="min-h-screen bg-[#080D16] text-slate-100 px-4 py-5 md:px-7">
+ return <main className="min-h-screen bg-[#080D16] text-slate-100 px-4 py-5 md:px-7"><RegisterContext module="DIR" label="Drive register"/>
   <div className="max-w-[1500px] mx-auto">
    <Link href="/dashboard" className="inline-flex items-center gap-2 text-xs text-slate-500 hover:text-white"><ArrowLeft className="w-4 h-4"/>All registers</Link>
    <header className="mt-5 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">

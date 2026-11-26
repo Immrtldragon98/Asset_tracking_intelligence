@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Header from "@/components/layout/Header";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import Inspector from "@/components/workspace/Inspector";
+import { useWorkspaceQuery } from "@/hooks/useWorkspaceQuery";
 import StandDetails from "@/components/stand/StandDetails";
 import ComponentPreparationModal from "@/components/stand/ComponentPreparationModal";
 import { fetchApi } from "@/lib/api";
 import { AuthUser, canEdit, getUser, isAdmin } from "@/lib/auth";
 
-const ORDER = ["READY", "HYDROTEST", "GAUGING", "PENDING"];
+const ORDER = ["PENDING", "GAUGING", "HYDROTEST", "READY"];
 const LABEL: Record<string, string> = {
   READY: "Ready",
   HYDROTEST: "Hydrotest",
@@ -59,7 +61,10 @@ type Stand = {
   is_running: boolean;
 };
 
-export default function StandAreaPage() {
+function StandAreaWorkspace() {
+  const {params,update}=useWorkspaceQuery();
+  const statusFilter=params.get("status")||"ALL", query=params.get("q")||"", view=params.get("view")==="list"?"list":"board";
+  const selectedId=Number(params.get("stand"));
   const [stands, setStands] = useState<Stand[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -73,13 +78,11 @@ export default function StandAreaPage() {
   const [newStandCode, setNewStandCode] = useState("");
   const [newStandLife, setNewStandLife] = useState("0");
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({
-    HYDROTEST: true,
-    GAUGING: true,
-  });
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   const load = async () => {
     try {
+      setLoading(true);
       setError("");
       setStands(await fetchApi("/stands/"));
     } catch (e) {
@@ -90,8 +93,11 @@ export default function StandAreaPage() {
   };
 
   useEffect(() => {
-    setUser(getUser());
-    load();
+    const sync=()=>setUser(getUser());
+    sync(); void load();
+    window.addEventListener("dsr-auth-change",sync);
+    window.addEventListener("storage",sync);
+    return()=>{window.removeEventListener("dsr-auth-change",sync);window.removeEventListener("storage",sync)};
   }, []);
 
   const groups = useMemo(
@@ -100,11 +106,11 @@ export default function StandAreaPage() {
         ORDER.map((status) => [
           status,
           stands
-            .filter((x) => x.current_status === status)
+            .filter((x) => x.current_status === status && (!query || x.code.toLowerCase().includes(query.toLowerCase())))
             .sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true })),
         ])
       ),
-    [stands]
+    [stands, query]
   );
 
   const runningCount = stands.filter((x) => x.is_running).length;
@@ -139,18 +145,17 @@ export default function StandAreaPage() {
     setNewStandOpen(true);
   }
 
-  async function openStand(stand: Stand) {
-    try {
-      setSelected(await fetchApi(`/stands/${stand.id}`));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load stand");
-    }
-  }
+  async function openStand(stand: Stand) { update({stand:String(stand.id)},true); }
+  useEffect(()=>{
+    let active=true;setSelected(null);
+    if(selectedId>0)fetchApi("/stands/"+selectedId).then(value=>{if(active)setSelected(value)}).catch(e=>{if(active)setError(e instanceof Error?e.message:"Could not load stand")});
+    return()=>{active=false};
+  },[selectedId]);
 
   return (
     <div className="dsr-page">
-      <Header title="Stand Area" />
-      <main className="dsr-main">
+      
+      <main className="enterprise-page">
         <div className="full-bleed space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -164,7 +169,7 @@ export default function StandAreaPage() {
             </div>
             <div className="flex gap-2">
               <div className="flex items-center gap-2 mr-auto sm:mr-0">
-                <span className="text-[11px] uppercase tracking-wider text-slate-500">Running</span>
+                <span className="text-[11px] uppercase tracking-wider text-slate-500">Installed</span>
                 <span className="text-lg font-bold text-emerald-300">{runningCount}</span>
               </div>
               {isAdmin(user) && (
@@ -181,28 +186,26 @@ export default function StandAreaPage() {
           <section className="mechanical-panel overflow-hidden">
             <div className="dsr-panel-head">
               <div>
-                <div className="dsr-kicker">Clean preparation board</div>
+                <div className="dsr-kicker">FMIR · Readiness workflow</div>
                 <div className="font-bold text-white">Current Stand Readiness</div>
                 <p className="dsr-subtitle">
-                  Old shift-report/sample entries are not used here. The board is driven only by the stand status in the database.
+                  Readiness follows recorded completion of components, gauging and hydrotest.
                 </p>
               </div>
-              <span className="dsr-chip">LIVE DATA</span>
+              <span className="dsr-chip">REGISTER DATA</span>
             </div>
             <div className="p-3 grid grid-cols-2 md:grid-cols-4 gap-2">
               {ORDER.map((status) => (
                 <div key={status} className="rounded-lg border border-slate-800 bg-[#0b111d] p-3">
                   <div className={`text-xs font-bold ${STYLE[status].label}`}>{LABEL[status]}</div>
-                  <div className="mt-1 text-2xl font-bold text-white">{groups[status]?.length || 0}</div>
+                  <div className="mt-1 text-2xl font-bold text-white">{loading ? "—" : groups[status]?.length || 0}</div>
                 </div>
               ))}
             </div>
           </section>
 
           {!user && (
-            <div className="rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-sm text-slate-300">
-              Viewer mode · Sign in to update stands.
-            </div>
+            <Link href="/login" className="workspace-notice block">Viewer mode · Sign in to update stands.</Link>
           )}
 
           {error && (
@@ -211,11 +214,16 @@ export default function StandAreaPage() {
             </div>
           )}
 
+          <div className="workspace-toolbar">
+            <label className="workspace-search"><span>Search stand codes</span><input className="input-class" value={query} onChange={e=>update({q:e.target.value})} placeholder="Stand code"/></label>
+            <label><span>Readiness stage</span><select className="input-class" value={statusFilter} onChange={e=>update({status:e.target.value})}><option value="ALL">All stages</option>{ORDER.map(status=><option key={status} value={status}>{LABEL[status]}</option>)}</select></label>
+            <label><span>View</span><select className="input-class" value={view} onChange={e=>update({view:e.target.value})}><option value="board">Readiness board</option><option value="list">Stage list</option></select></label>
+          </div>
           {loading ? (
             <div className="dsr-empty">Loading stand preparation...</div>
           ) : (
-            <div className="space-y-2">
-              {ORDER.map((status) => {
+            <div className={view==="board"?"preparation-board":"space-y-2"}>
+              {ORDER.filter(status=>statusFilter==="ALL"||status===statusFilter).map((status) => {
                 const style = STYLE[status];
                 const count = groups[status].length;
                 const isCollapsed = collapsed[status] ?? false;
@@ -239,7 +247,7 @@ export default function StandAreaPage() {
 
                     {!isCollapsed && (
                       <div className="border-t border-white/5 p-3">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10 gap-2">
+                        <div className={view==="board"?"preparation-stage-cards":"grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2"}>
                           {groups[status].map((stand: Stand) => (
                             <div
                               key={stand.id}
@@ -253,7 +261,7 @@ export default function StandAreaPage() {
                                       stand.is_running ? "text-emerald-300" : "text-slate-500"
                                     }`}
                                   >
-                                    {stand.is_running ? "RUNNING" : "NOT RUNNING"}
+                                    {stand.is_running ? "INSTALLED" : "OFF LINE"}
                                   </span>
                                 </div>
                                 <div className="text-xs text-slate-300 mt-1">
@@ -341,24 +349,7 @@ export default function StandAreaPage() {
         </div>
       )}
 
-      {selected && (
-        <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-end md:items-center justify-center md:p-5"
-          onClick={() => setSelected(null)}
-        >
-          <div
-            className="w-full md:max-w-4xl max-h-[92vh] overflow-auto rounded-t-2xl md:rounded-xl bg-[#0d131b] border border-slate-700 p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-end mb-2">
-              <button onClick={() => setSelected(null)} className="dsr-btn">
-                Close
-              </button>
-            </div>
-            <StandDetails stand={selected} />
-          </div>
-        </div>
-      )}
+      {selectedId>0&&<Inspector title={selected?.code||"Stand record"} onClose={()=>update({stand:null})}>{selected?<StandDetails stand={selected}/>:<p className="workspace-empty">{error||"Loading stand record…"}</p>}</Inspector>}
 
       {componentStand && (
         <ComponentPreparationModal
@@ -370,3 +361,5 @@ export default function StandAreaPage() {
     </div>
   );
 }
+
+export default function StandAreaPage(){return <Suspense fallback={<div className="dsr-empty">Opening stand preparation…</div>}><StandAreaWorkspace/></Suspense>;}

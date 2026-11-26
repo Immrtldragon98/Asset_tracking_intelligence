@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import { fetchApi } from "@/lib/api";
 import { ArrowLeft, BrainCircuit, AlertCircle, Cog, Cpu, Factory, Gauge, Wrench, Zap } from "lucide-react";
@@ -9,8 +9,9 @@ import { ArrowLeft, BrainCircuit, AlertCircle, Cog, Cpu, Factory, Gauge, Wrench,
 const icons:any={DSIR:Factory,RMIR:Cog,MIR:Cpu,DIR:Zap,SSIR:Wrench};
 
 export default function AssetModulePage(){
+ const router=useRouter();
  const params=useParams<{module:string}>(); const code=(params.module||"").toUpperCase(); const [data,setData]=useState<any>(null); const [loading,setLoading]=useState(true);
- useEffect(()=>{fetchApi(`/assets/${code}`).then(setData).finally(()=>setLoading(false))},[code]);
+ useEffect(()=>{if(code==="DSIR"||code==="FMIR"){router.replace("/fmir");return;}fetchApi(`/assets/${code}`).then(setData).finally(()=>setLoading(false))},[code,router]);
  const Icon=icons[code]||Gauge; const assets=data?.assets||[];
  return <div className="flex-1 min-h-screen"><Header title={data?.module?.name||code}/><main className="dsr-main full-bleed"><Link href="/dashboard" className="inline-flex items-center gap-2 text-xs text-slate-400 hover:text-white mb-4"><ArrowLeft className="w-4 h-4"/>All registers</Link>
   <div className="flex items-start gap-3 mb-5"><div className="w-11 h-11 rounded-lg border border-[#33445b] bg-[#101827] grid place-items-center"><Icon className="w-5 h-5 text-slate-300"/></div><div><div className="dsr-kicker">{code}</div><h1 className="text-2xl font-bold text-white">{data?.module?.name||"Asset Register"}</h1><p className="text-sm text-slate-400 mt-1">{data?.module?.description}</p></div></div>

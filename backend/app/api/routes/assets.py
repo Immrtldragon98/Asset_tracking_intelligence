@@ -3,12 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.asset_registry import AssetRegistry
+from app.repositories.asset_catalog_repository import AssetCatalogRepository
+from app.services.asset_catalog_service import AssetCatalogService
 
 router = APIRouter()
 
 
 MODULES = [
-    {"code": "DSIR", "name": "Digital Stand Intelligent Register", "short_name": "DSIR", "area": "Finishing Mill", "description": "Stand lifecycle, condition, campaign life, components and reliability."},
+    {"code": "DSIR", "name": "Finishing Mill Intelligent Register", "short_name": "FMIR", "area": "Finishing Mill", "description": "Stand lifecycle, condition, campaign life, components and reliability."},
     {"code": "RMIR", "name": "Roughing Mill Intelligent Register", "short_name": "RMIR", "area": "Roughing Mill", "description": "Roughing mill stands and connected gearboxes, shafts, couplers, motors and drives."},
     {"code": "MIR", "name": "Motor Intelligent Register", "short_name": "MIR", "area": "Plant-wide", "description": "Motor identity, operating history, maintenance and failure intelligence."},
     {"code": "DIR", "name": "Drive Intelligent Register", "short_name": "DIR", "area": "Plant-wide", "description": "Drive identity, health, trips, maintenance and failure intelligence."},
@@ -65,7 +67,7 @@ RUNNING_CONFIG = {
 
 @router.get("/running-config/{module_code}")
 def get_running_config(module_code: str):
-    code = module_code.upper()
+    code = "DSIR" if module_code.upper() == "FMIR" else module_code.upper()
     config = RUNNING_CONFIG.get(code)
     if not config:
         return {"module": code, "area": None, "lines": {}, "total_running": 0}
@@ -76,9 +78,14 @@ def get_running_config(module_code: str):
     }
 
 
+@router.get("/catalog")
+def get_asset_catalog(db: Session = Depends(get_db)):
+    return AssetCatalogService(AssetCatalogRepository(db)).get_catalog()
+
+
 @router.get("/{module_code}")
 def get_module_assets(module_code: str, db: Session = Depends(get_db)):
-    code = module_code.upper()
+    code = "DSIR" if module_code.upper() == "FMIR" else module_code.upper()
     if code not in {m["code"] for m in MODULES}:
         return {"module": code, "assets": [], "message": "Module is defined but has no registered assets yet."}
 

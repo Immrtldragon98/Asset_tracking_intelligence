@@ -1,0 +1,18 @@
+const assert=require("node:assert/strict");
+const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),ts=require("typescript");
+const source=fs.readFileSync(path.join(__dirname,"../lib/equipment.ts"),"utf8");
+const sandbox={exports:{},require};
+vm.runInNewContext(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,sandbox);
+const {assetLine,assetAncestors,conditionFlags}=sandbox.exports;
+const lines=[{id:1,name:"WRM1",positions:[]},{id:2,name:"WRM2",positions:[]}];
+const unknown={id:1,asset_code:"WRM2-MOTOR1",parent_id:null,location:null};
+const parent={id:2,asset_code:"ASSEMBLY",parent_id:null,location:"WRM 1"};
+const child={id:3,asset_code:"MOTOR",parent_id:2,location:null};
+assert.equal(assetLine(unknown,[unknown],lines),null,"Tag text must not invent a location");
+assert.equal(assetLine(child,[parent,child],lines),"WRM1","A recorded parent location supplies assembly context");
+const cycleA={id:4,parent_id:5,location:null},cycleB={id:5,parent_id:4,location:null};
+assert.equal(assetLine(cycleA,[cycleA,cycleB],lines),null,"Existing bad cycles must not hang navigation");
+assert.equal(assetAncestors(cycleA,[cycleA,cycleB]).length,1);
+assert.equal(assetAncestors(child,[parent,child])[0].id,2);
+assert.equal(conditionFlags({leakage:true,vibration:false,abnormal_sound:true}).join(","),"Leakage,Abnormal sound");
+console.log("Equipment checks passed: explicit locations, inherited assembly context, cycle-safe traversal and recorded condition flags.");
