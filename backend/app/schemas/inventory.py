@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class InventoryBase(BaseModel):
     name: str = Field(min_length=1, max_length=150)
-    quantity: int = Field(default=0, ge=0)
+    quantity: int | None = Field(default=None, ge=0)
     minimum_quantity: int = Field(default=0, ge=0)
     location: str = Field(default="Store", min_length=1, max_length=150)
     remarks: str | None = None
@@ -57,8 +57,8 @@ class InventoryTransactionOut(BaseModel):
     id: int
     item_id: int
     item_name: str
-    quantity_before: int
-    quantity_change: int
+    quantity_before: int | None
+    quantity_change: int | None
     quantity_after: int
     operator: str
     reason: str

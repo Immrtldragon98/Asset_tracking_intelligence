@@ -1,0 +1,36 @@
+name: Stock import compatibility
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - ".github/workflows/import-compatibility-checks.yml"
+permissions:
+  contents: read
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements.txt
+      - run: PYTHONPATH=. pytest -q tests/test_unknown_stock.py tests/test_asset_catalog_service.py
+      - run: python -m compileall -q app scripts/import_dsr_copy.py scripts/wait_for_import.py
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - run: npm run check:navigation && node scripts/check-equipment.cjs
+      - run: npm run build

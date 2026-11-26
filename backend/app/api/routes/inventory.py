@@ -33,7 +33,7 @@ def _recalculate(item: InventoryItem) -> None:
     Reliability is life achievement against expected life using observed average life.
     Criticality here is planning criticality (stock + life risk), not an FMEA severity score.
     """
-    if (item.minimum_quantity or 0) > 0:
+    if item.quantity is not None and (item.minimum_quantity or 0) > 0:
         item.availability_pct = round(min(100.0, (item.quantity / item.minimum_quantity) * 100.0), 1)
     else:
         item.availability_pct = None
@@ -82,14 +82,9 @@ def list_inventory(include_archived: bool = False, db: Session = Depends(get_db)
     if not include_archived:
         query = query.filter(InventoryItem.is_active.is_(True))
     items = query.order_by(InventoryItem.name.asc()).all()
-    changed = False
     for item in items:
-        before = (item.availability_pct, item.reliability_pct, item.criticality)
         _recalculate(item)
-        after = (item.availability_pct, item.reliability_pct, item.criticality)
-        changed = changed or before != after
-    if changed:
-        db.commit()
+    # Derived read metrics are returned without committing changes on GET.
     return items
 
 
@@ -149,6 +144,8 @@ def change_quantity(item_id: int, payload: InventoryQuantityChange, db: Session 
     if payload.delta == 0:
         raise HTTPException(400, "Quantity change cannot be zero")
     before = item.quantity
+    if before is None:
+        raise HTTPException(409, "Record a verified opening stock count before stock movements")
     after = before + payload.delta
     if after < 0:
         raise HTTPException(400, "Quantity cannot be negative")
@@ -178,7 +175,7 @@ def set_quantity(item_id: int, payload: InventorySetQuantity, db: Session = Depe
     if payload.quantity == before:
         raise HTTPException(400, "New quantity is the same as current quantity")
 
-    delta = payload.quantity - before
+    delta = None if before is None else payload.quantity - before
     item.quantity = payload.quantity
     _recalculate(item)
     db.add(InventoryTransaction(
@@ -188,7 +185,7 @@ def set_quantity(item_id: int, payload: InventorySetQuantity, db: Session = Depe
         quantity_after=payload.quantity,
         operator=(payload.operator.strip() or user.username),
         reason=payload.reason.strip(),
-        transaction_type="CORRECTION",
+        transaction_type="INITIAL_COUNT" if before is None else "CORRECTION",
     ))
     db.commit()
     db.refresh(item)

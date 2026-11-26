@@ -10,8 +10,8 @@ class InventoryTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     item_id = Column(Integer, ForeignKey("inventory_items.id", ondelete="RESTRICT"), nullable=False, index=True)
-    quantity_before = Column(Integer, nullable=False)
-    quantity_change = Column(Integer, nullable=False)
+    quantity_before = Column(Integer, nullable=True)
+    quantity_change = Column(Integer, nullable=True)
     quantity_after = Column(Integer, nullable=False)
     operator = Column(String(150), nullable=False)
     reason = Column(Text, nullable=False)

@@ -1,84 +1,10 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import Header from "@/components/layout/Header";
-import { fetchApi } from "@/lib/api";
-import { ArrowLeftRight, CheckCircle2 } from "lucide-react";
-
-export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadTransactions() {
-      try {
-        const data = await fetchApi("/transactions");
-        setTransactions(data);
-      } catch (err) {
-        console.error("Failed to load transactions:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadTransactions();
-  }, []);
-
-  return (
-    <div className="flex-1 bg-industrial-dark min-h-screen text-slate-100 flex flex-col">
-      <Header title="Plant Transactions Ledger" />
-      <main className="p-6 flex-1">
-        {loading ? (
-          <div className="flex items-center justify-center h-64 text-slate-400 font-mono text-sm">
-            Loading transaction history...
-          </div>
-        ) : (
-          <div className="bg-industrial-card border border-industrial-border rounded-xl p-6 shadow-xl">
-            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-              <ArrowLeftRight className="w-5 h-5 text-industrial-accent" />
-              Active Transaction Logs
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-300">
-                <thead className="bg-industrial-dark text-xs uppercase text-slate-400 border-b border-industrial-border">
-                  <tr>
-                    <th className="px-4 py-3">Transaction ID</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Asset / Unit</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-industrial-border">
-                  {transactions && transactions.length > 0 ? (
-                    transactions.map((tx, idx) => (
-                      <tr key={idx} className="hover:bg-industrial-dark/50">
-                        <td className="px-4 py-3 font-mono text-xs text-white">{tx.id || `TX-${idx + 100}`}</td>
-                        <td className="px-4 py-3 font-medium text-slate-200">{tx.type || "Transfer"}</td>
-                        <td className="px-4 py-3 text-slate-400">{tx.asset_id || "Stand Unit A"}</td>
-                        <td className="px-4 py-3">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-950/50 text-green-400 border border-green-800 rounded-full text-xs">
-                            <CheckCircle2 className="w-3 h-3" />
-                            {tx.status || "Completed"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-slate-400">
-                          {new Date(tx.timestamp || Date.now()).toLocaleString()}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                        No transactions registered in the ledger.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+import Link from "next/link";
+import { useWorkspaceResource } from "@/hooks/useWorkspaceResource";
+type Movement={id:number;item_name:string;quantity_before:number|null;quantity_change:number|null;quantity_after:number;transaction_type:string;operator:string;reason:string;created_at:string};
+export default function TransactionsPage(){
+ const records=useWorkspaceResource<Movement[]>("/inventory/transactions");
+ return <main className="enterprise-page"><header className="enterprise-heading"><div><div className="dsr-kicker">Stock audit trail</div><h1>Inventory transaction history</h1><p>Opening counts and later movements remain separate, traceable records.</p></div><Link href="/inventory" className="dsr-btn">Back to spares</Link></header>
+ {records.error&&<p role="alert" className="workspace-notice">{records.error}</p>}<button className="dsr-btn mb-4" onClick={()=>void records.reload()}>Refresh</button>
+ <div className="dsr-table-wrap"><table className="dsr-table min-w-[900px]"><thead><tr>{["Date","Spare","Type","Before","Change","After","Recorded by","Reason"].map(label=><th key={label} className="dsr-th">{label}</th>)}</tr></thead><tbody>{records.data?.map(row=><tr key={row.id}><td className="dsr-td">{new Date(row.created_at).toLocaleString("en-IN")}</td><td className="dsr-td">{row.item_name}</td><td className="dsr-td">{row.transaction_type.replaceAll("_"," ")}</td><td className="dsr-td">{row.quantity_before??"Not recorded"}</td><td className="dsr-td">{row.quantity_change==null?"Initial count":row.quantity_change>0?"+"+row.quantity_change:row.quantity_change}</td><td className="dsr-td">{row.quantity_after}</td><td className="dsr-td">{row.operator}</td><td className="dsr-td">{row.reason}</td></tr>)}{!records.data?.length&&<tr><td colSpan={8} className="dsr-empty">{records.loading?"Loading stock history…":records.error?"History unavailable. Retry above.":"No stock transactions recorded yet."}</td></tr>}</tbody></table></div></main>;
 }
