@@ -1,4 +1,5 @@
 const assert=require("node:assert/strict");
+const fs=require("node:fs");fs.mkdirSync("workspace-evidence",{recursive:true});
 const {spawn}=require("node:child_process");
 const {chromium}=require("playwright");
 const server=spawn(process.execPath,[require.resolve("next/dist/bin/next"),"start","--hostname","127.0.0.1","--port","3123"],{stdio:["ignore","pipe","pipe"]});
@@ -50,6 +51,7 @@ async function noOverflow(page){const sizes=await page.evaluate(()=>({width:docu
   await page.locator(".engineer-kpi").filter({hasText:"Ready spare stands"}).getByText("2",{exact:true}).waitFor();
   await page.getByRole("navigation",{name:"Primary workspaces"}).waitFor();
   await noOverflow(page);
+  await page.screenshot({path:"workspace-evidence/desktop-dashboard.png",fullPage:true});
   await page.getByRole("button",{name:"Collapse workflow sidebar"}).click();
   assert.equal(await page.locator(".ati-desktop-sidebar").isVisible(),false);
   await page.reload();await page.getByRole("button",{name:"Expand workflow sidebar"}).waitFor();
@@ -63,10 +65,12 @@ async function noOverflow(page){const sizes=await page.evaluate(()=>({width:docu
   await page.getByRole("button",{name:/WRM2-MOTOR-UNLOCATED/}).click();
   await page.getByRole("heading",{name:"WRM2-MOTOR-UNLOCATED",exact:true}).waitFor();
   await page.reload();await page.getByRole("heading",{name:"WRM2-MOTOR-UNLOCATED",exact:true}).waitFor();
+  await page.screenshot({path:"workspace-evidence/desktop-equipment.png",fullPage:true});
 
   await page.goto(base+"/inventory");
   await page.getByRole("button",{name:"Bearing kit",exact:true}).click();
   await page.getByRole("dialog",{name:"Bearing kit"}).waitFor();
+  await page.screenshot({path:"workspace-evidence/desktop-inventory-inspector.png",fullPage:true});
   await page.getByLabel("New store quantity").fill("3");
   await page.getByLabel("Reason",{exact:true}).fill("Cycle count");
   await page.getByRole("button",{name:"Confirm stock movement"}).click();
@@ -96,7 +100,8 @@ async function noOverflow(page){const sizes=await page.evaluate(()=>({width:docu
 
   const mobile=await setup(browser,false,{width:390,height:844}),phone=mobile.page;
   for(const route of ["/dashboard","/equipment","/inventory","/maintenance","/stand-area","/operations"]){
-   await phone.goto(base+route);await phone.locator("main").first().waitFor();await noOverflow(phone);
+   await phone.goto(base+route);await phone.locator("main").first().waitFor();await phone.waitForLoadState("networkidle");await noOverflow(phone);
+   await phone.screenshot({path:"workspace-evidence/mobile-"+route.slice(1)+".png",fullPage:true});
   }
   assert.equal(await phone.getByRole("button",{name:"Record change",exact:true}).count(),0);
   await phone.getByRole("button",{name:"Open navigation"}).click();

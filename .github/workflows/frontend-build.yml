@@ -34,6 +34,13 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Verify desktop and mobile workspaces
         run: node scripts/check-workspace-browser.cjs
+      - name: Save fixture screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace-layout-fixtures
+          path: frontend/workspace-evidence
+          if-no-files-found: ignore
       - name: Verify frontend Docker image
         working-directory: .
         run: docker build -f frontend/Dockerfile frontend

@@ -1,9 +1,9 @@
 "use client";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function useWorkspaceQuery() {
-  const pathname = usePathname(), router = useRouter(), search = useSearchParams();
+  const pathname = usePathname(), search = useSearchParams();
   const serialized = search.toString();
   const [value, setValue] = useState(serialized);
   const current = useRef(serialized);
@@ -13,7 +13,8 @@ export function useWorkspaceQuery() {
     Object.entries(changes).forEach(([key, val]) => { if (val === null || val === "") next.delete(key); else next.set(key, val); });
     current.current = next.toString(); setValue(current.current);
     const href = pathname + (current.current ? "?" + current.current : "");
-    if (push) router.push(href, { scroll: false }); else router.replace(href, { scroll: false });
-  }, [pathname, router]);
+    // Same-page state must reach the URL synchronously so an immediate refresh preserves it.
+    if (push) window.history.pushState(null, "", href); else window.history.replaceState(null, "", href);
+  }, [pathname]);
   return { params: new URLSearchParams(value), update };
 }
