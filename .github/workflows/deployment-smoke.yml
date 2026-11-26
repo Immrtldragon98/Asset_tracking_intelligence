@@ -1,0 +1,30 @@
+name: ATI live deployment verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deployment-smoke.yml"
+      - "frontend/scripts/check-live-deployment.cjs"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --legacy-peer-deps --no-audit --no-fund
+      - run: npm install --no-save --package-lock=false --legacy-peer-deps playwright
+      - run: npx playwright install --with-deps chromium
+      - name: Verify the live imported app without mutations
+        env:
+          ATI_WEB_URL: https://asset-tracking-intelligence-web-b9yn.onrender.com
+          ATI_API_URL: https://asset-tracking-intelligence-api-8vmz.onrender.com
+        run: node scripts/check-live-deployment.cjs
