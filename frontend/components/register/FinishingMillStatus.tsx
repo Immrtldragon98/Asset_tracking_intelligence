@@ -6,7 +6,7 @@ import { RefreshCw } from "lucide-react";
 import LineStatusGrid from "@/components/dashboard/LineStatusGrid";
 import { fetchApi, invalidateApiCache } from "@/lib/api";
 
-export default function FinishingMillStatus({ compact = false }: { compact?: boolean }) {
+export default function FinishingMillStatus({ compact = false, lineName = "" }: { compact?: boolean; lineName?: string }) {
   const [lines, setLines] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [slow, setSlow] = useState(false);
@@ -41,14 +41,15 @@ export default function FinishingMillStatus({ compact = false }: { compact?: boo
     return () => window.clearTimeout(hint);
   }, [loading]);
 
-  const installed = lines?.reduce((count, line) => count + (line.positions || []).filter((p: any) => p.current_stand).length, 0);
+  const visibleLines = lines?.filter(line => !lineName || line.name === lineName);
+  const installed = visibleLines?.reduce((count, line) => count + (line.positions || []).filter((p: any) => p.current_stand).length, 0);
   const refresh = () => { invalidateApiCache(); void load(); };
 
   return <section aria-labelledby={compact ? "plant-fmir-title" : "fmir-line-title"} aria-busy={loading} className="space-y-3">
     <div className="dsr-section-head">
       <div>
         <div className="dsr-kicker">FMIR · Finishing Mill · Digital Stand Register</div>
-        <h2 id={compact ? "plant-fmir-title" : "fmir-line-title"} className="dsr-title">WRM 1–3 stand status</h2>
+        <h2 id={compact ? "plant-fmir-title" : "fmir-line-title"} className="dsr-title">{lineName ? lineName + " stand status" : "WRM 1–3 stand status"}</h2>
         <p className="dsr-subtitle">Installed stands by line and position, from the stand-change register.</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
@@ -67,8 +68,8 @@ export default function FinishingMillStatus({ compact = false }: { compact?: boo
       <p className="text-sm text-slate-400">{slow ? "The free server may be waking up. Your records will appear when it responds." : "Loading finishing-mill installation records…"}</p>
     </div>}
     {lines !== null && <>
-      <div className="flex flex-wrap gap-3 text-xs text-slate-400"><span>{installed} installed stands</span><span>{lines.length} recorded lines</span>{receivedAt && <span>Records received at {receivedAt}{error ? " · refresh failed" : loading ? " · refreshing" : ""}</span>}</div>
-      {lines.length ? <LineStatusGrid lines={lines} /> : <div className="mechanical-panel p-5 text-sm text-slate-400">No line installation records are available. Record the actual lineup through Stand Change.</div>}
+      <div className="flex flex-wrap gap-3 text-xs text-slate-400"><span>{installed} installed stands</span><span>{visibleLines?.length || 0} recorded lines</span>{receivedAt && <span>Records received at {receivedAt}{error ? " · refresh failed" : loading ? " · refreshing" : ""}</span>}</div>
+      {visibleLines?.length ? <LineStatusGrid lines={visibleLines} /> : <div className="mechanical-panel p-5 text-sm text-slate-400">No line installation records are available. Record the actual lineup through Stand Change.</div>}
     </>}
     <p className="text-xs text-slate-500">Installation records establish the lineup. They do not confirm the line is operating. Calendar age is elapsed time since installation, not measured operating hours.</p>
   </section>;

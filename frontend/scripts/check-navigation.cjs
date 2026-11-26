@@ -9,7 +9,7 @@ const sandbox = { exports: {}, require };
 vm.runInNewContext(compiled, sandbox);
 const { moduleForPath, displayModule, storageModule, groupsFor, MODULES, destinations } = sandbox.exports;
 
-for (const route of ['/dashboard', '/settings', '/users', '/system-status', '/reliability', '/maintenance']) {
+for (const route of ['/dashboard', '/equipment', '/settings', '/users', '/system-status', '/reliability', '/maintenance']) {
   assert.equal(moduleForPath(route), 'PLANT', `${route} must not silently select FMIR`);
 }
 for (const route of ['/fmir', '/dsir', '/stand-area', '/running-stands', '/operations', '/inventory', '/asset-intelligence/dsir', '/asset-intelligence/fmir']) {

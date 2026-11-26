@@ -96,7 +96,7 @@ const SSIR: NavGroup[] = [
 ];
 
 const PLANT: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Plant dashboard", href: "/dashboard", icon: Home }] },
+  { name: "Overview", items: [{ name: "Plant dashboard", href: "/dashboard", icon: Home }, { name: "Equipment explorer", href: "/equipment", icon: Factory }] },
   { name: "Registers", items: [
     { name: "FMIR · Finishing Mill (DSR)", href: "/fmir", icon: Factory },
     { name: "RMIR · Roughing Mill", href: "/rmir", icon: Wrench },

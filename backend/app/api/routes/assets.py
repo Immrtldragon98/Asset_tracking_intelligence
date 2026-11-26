@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.database.session import get_db
 from app.models.asset_registry import AssetRegistry
+from app.repositories.asset_catalog_repository import AssetCatalogRepository
+from app.services.asset_catalog_service import AssetCatalogService
 
 router = APIRouter()
 
@@ -74,6 +76,11 @@ def get_running_config(module_code: str):
         "total_running": sum(len(values) for values in config["lines"].values()),
         "updated_at": "2026-10-08",
     }
+
+
+@router.get("/catalog")
+def get_asset_catalog(db: Session = Depends(get_db)):
+    return AssetCatalogService(AssetCatalogRepository(db)).get_catalog()
 
 
 @router.get("/{module_code}")
