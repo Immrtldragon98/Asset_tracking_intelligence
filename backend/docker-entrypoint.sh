@@ -5,6 +5,7 @@ echo "Applying database migrations..."
 alembic upgrade head
 
 if [ "${ATI_WAIT_FOR_IMPORT:-0}" = "1" ]; then
+    python scripts/import_dsr_copy.py
     python scripts/wait_for_import.py
 fi
 
