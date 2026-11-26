@@ -5,32 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, ChevronRight, Command, Search, X } from "lucide-react";
 
-const destinations = [
-  { title: "Command center", href: "/dashboard", group: "Overview" },
-  { title: "Finishing mill register", href: "/dsir", group: "Equipment" },
-  { title: "Roughing mill register", href: "/rmir", group: "Equipment" },
-  { title: "Motor register", href: "/mir", group: "Equipment" },
-  { title: "Drive register", href: "/dir", group: "Equipment" },
-  { title: "Critical asset register", href: "/ssir", group: "Equipment" },
-  { title: "Stand preparation", href: "/stand-area", group: "Operations" },
-  { title: "Running stands", href: "/running-stands", group: "Operations" },
-  { title: "Stand change", href: "/operations", group: "Operations" },
-  { title: "Entry guide change", href: "/entry-guides", group: "Operations" },
-  { title: "Maintenance schedule", href: "/maintenance", group: "Maintenance" },
-  { title: "Preventive maintenance", href: "/pm-schedule", group: "Maintenance" },
-  { title: "Reliability history", href: "/reliability", group: "Intelligence" },
-  { title: "Stand life planning", href: "/planning", group: "Intelligence" },
-  { title: "Equipment intelligence", href: "/intelligence", group: "Intelligence" },
-  { title: "Alerts", href: "/alerts", group: "Intelligence" },
-  { title: "Reports", href: "/reports", group: "Records" },
-  { title: "Change history", href: "/activity", group: "Records" },
-  { title: "Inventory", href: "/inventory", group: "Records" },
-  { title: "System status", href: "/system-status", group: "System" },
-];
+import { destinations } from "@/lib/navigation";
 
 const pretty = (segment: string) => segment
   .split("-")
-  .map(word => word.length < 4 && /^(rmir|mir|dir|ssir|dsir)$/i.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1))
+  .map(word => /^(fmir|rmir|mir|dir|ssir|dsir)$/i.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1))
   .join(" ");
 
 export default function WorkspaceBar() {
@@ -68,7 +47,7 @@ export default function WorkspaceBar() {
     <>
       <div className="workspace-bar">
         <nav aria-label="Breadcrumb" className="workspace-breadcrumb">
-          <Link href="/dashboard">Workspace</Link>
+          <Link href="/dashboard">Plant</Link>
           {segments.map((segment, index) => {
             const href = "/" + segments.slice(0, index + 1).join("/");
             const label = index === segments.length - 1 && current ? current.title : pretty(segment);

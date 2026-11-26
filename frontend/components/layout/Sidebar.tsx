@@ -1,288 +1,88 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  BrainCircuit,
-  CalendarDays,
-  ChevronDown,
-  Factory,
-  FileText,
-  Gauge,
-  History,
-  Home,
-  LogIn,
-  LogOut,
-  Menu,
-  Package,
-  Settings2,
-  Wrench,
-  X,
-  Zap,
-} from "lucide-react";
+import { Factory, LogIn, LogOut, Menu, X } from "lucide-react";
 import { AuthUser, clearSession, getUser } from "@/lib/auth";
-
-type NavItem = {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
-
-type NavGroup = {
-  name: string;
-  items: NavItem[];
-};
-
-const MODULES = [
-  { code: "DSIR", label: "Finishing Mill", href: "/dsir" },
-  { code: "RMIR", label: "Roughing Mill", href: "/rmir" },
-  { code: "MIR", label: "Motors", href: "/mir" },
-  { code: "DIR", label: "Drives", href: "/dir" },
-  { code: "SSIR", label: "Critical Assets", href: "/ssir" },
-];
-
-const DSIR: NavGroup[] = [
-  { name: "Overview", items: [
-    { name: "Stand Area", href: "/stand-area", icon: Factory },
-    { name: "Running Stands", href: "/running-stands", icon: Gauge },
-    { name: "Alerts", href: "/alerts", icon: Zap },
-  ]},
-  { name: "Record changes", items: [
-    { name: "Stand Change", href: "/operations", icon: Wrench },
-    { name: "Entry Guide Change", href: "/entry-guides", icon: Settings2 },
-  ]},
-  { name: "Maintenance", items: [
-    { name: "Maintenance Data", href: "/pm-schedule", icon: CalendarDays },
-    { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
-    { name: "Spare service life", href: "/inventory", icon: Package },
-  ]},
-  { name: "Insights", items: [
-    { name: "Equipment insights", href: "/intelligence", icon: BrainCircuit },
-    { name: "Equipment life & history", href: "/reliability?module=DSIR", icon: BrainCircuit },
-    { name: "Investigation", href: "/investigation", icon: Zap },
-  ]},
-  { name: "History", items: [
-    { name: "Change history", href: "/activity", icon: History },
-    { name: "Export History", href: "/reports", icon: FileText },
-    { name: "Import Report", href: "/import-report", icon: FileText },
-    { name: "Import old records", href: "/historical-import", icon: History },
-  ]},
-];
-
-const RMIR: NavGroup[] = [
-  { name: "Overview", items: [
-    { name: "Running Stands", href: "/rmir", icon: Gauge },
-    { name: "Stand Area", href: "/rmir/stand-area", icon: Factory },
-  ]},
-  { name: "Operations", items: [
-    { name: "Stand Change", href: "/rmir/stand-change", icon: Wrench },
-    { name: "Entry Guide Change", href: "/rmir/entry-guide-change", icon: Settings2 },
-  ]},
-  { name: "Maintenance", items: [
-    { name: "Maintenance Data", href: "/rmir/maintenance", icon: CalendarDays },
-    { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays },
-    { name: "Spare service life", href: "/rmir/spare-life", icon: Package },
-  ]},
-  { name: "Intelligence", items: [
-    { name: "Equipment insights", href: "/rmir/intelligence", icon: BrainCircuit },
-    { name: "Equipment life & history", href: "/reliability?module=RMIR", icon: BrainCircuit },
-  ]},
-  { name: "History", items: [
-    { name: "History", href: "/rmir/history", icon: History },
-  ]},
-];
-
-const MIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Equipment status", href: "/mir", icon: Gauge }] },
-  { name: "Alerts & issues", items: [{ name: "Motor issues", href: "/mir/issues", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/mir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
-  { name: "Intelligence", items: [{ name: "Equipment insights", href: "/mir/intelligence", icon: BrainCircuit }, { name: "Equipment life & history", href: "/reliability?module=MIR", icon: BrainCircuit }] },
-  { name: "History", items: [{ name: "History", href: "/mir/history", icon: History }] },
-];
-
-const DIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Equipment status", href: "/dir", icon: Gauge }] },
-  { name: "Alerts", items: [{ name: "Alerts", href: "/dir/alerts", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/dir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }, { name: "Equipment life & history", href: "/reliability?module=DIR", icon: BrainCircuit }] },
-  { name: "History", items: [{ name: "History", href: "/dir/history", icon: History }] },
-];
-
-const SSIR: NavGroup[] = [
-  { name: "Overview", items: [{ name: "Equipment status", href: "/ssir", icon: Gauge }] },
-  { name: "Alerts", items: [{ name: "Alerts", href: "/ssir/alerts", icon: Zap }] },
-  { name: "Maintenance", items: [{ name: "Maintenance Data", href: "/ssir/maintenance", icon: CalendarDays }, { name: "Scheduled Maintenance", href: "/maintenance", icon: CalendarDays }] },
-  { name: "Intelligence", items: [{ name: "Equipment insights", href: "/ssir/intelligence", icon: BrainCircuit }, { name: "Equipment life & history", href: "/reliability?module=SSIR", icon: BrainCircuit }] },
-  { name: "History", items: [{ name: "History", href: "/ssir/history", icon: History }] },
-];
-
-function groupsFor(module: string): NavGroup[] {
-  if (module === "RMIR") return RMIR;
-  if (module === "MIR") return MIR;
-  if (module === "DIR") return DIR;
-  if (module === "SSIR") return SSIR;
-  return DSIR;
-}
-
-function moduleForPath(pathname: string): string {
-  if (pathname === "/rmir" || pathname.startsWith("/rmir/")) return "RMIR";
-  if (pathname === "/mir" || pathname.startsWith("/mir/")) return "MIR";
-  if (pathname === "/dir" || pathname.startsWith("/dir/")) return "DIR";
-  if (pathname === "/ssir" || pathname.startsWith("/ssir/")) return "SSIR";
-  return "DSIR";
-}
-
-function Brand() {
-  return (
-    <Link href="/dashboard" className="app-brand" aria-label="Asset Tracking Intelligence home">
-      <div className="brand-mark"><span /></div>
-      <div>
-        <div className="brand-title">Asset Tracking Intelligence</div>
-        <div className="brand-subtitle">Plant-wide maintenance</div>
-      </div>
-    </Link>
-  );
-}
-
-function ModulePicker({ module, onNavigate }: { module: string; onNavigate?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const current = MODULES.find((item) => item.code === module) ?? MODULES[0];
-
-  return (
-    <div className="nav-popover">
-      <button className="module-switch-btn" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span>{current.code}</span>
-        <b>{current.label}</b>
-        <ChevronDown className={`w-4 h-4 transition ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="module-dropdown">
-          {MODULES.map((item) => (
-            <Link
-              key={item.code}
-              href={item.href}
-              onClick={() => { setOpen(false); onNavigate?.(); }}
-              className={`module-option ${item.code === module ? "module-option-active" : ""}`}
-            >
-              <b>{item.code}</b>
-              <small>{item.label}</small>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GroupMenu({ group, pathname, onNavigate }: { group: NavGroup; pathname: string; onNavigate?: () => void }) {
-  const [open, setOpen] = useState(false);
-  const isActive = group.items.some((item) => pathname === item.href || (item.href === "/intelligence" && pathname === "/investigation"));
-
-  return (
-    <div className="nav-popover">
-      <button className={`nav-group-btn ${isActive ? "nav-group-active" : ""}`} onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span>{group.name}</span>
-        <ChevronDown className={`w-3.5 h-3.5 transition ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="nav-dropdown">
-          {group.items.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href || (item.href === "/intelligence" && pathname === "/investigation");
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => { setOpen(false); onNavigate?.(); }}
-                className={`nav-dropdown-item ${active ? "nav-dropdown-active" : ""}`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{item.name}</span>
-                <ArrowRight className="nav-item-arrow w-3.5 h-3.5" />
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+import { MODULES, groupsFor, moduleForPath, storageModule, type NavItem } from "@/lib/navigation";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const module = moduleForPath(pathname);
+  const module = moduleForPath(pathname, searchParams.get("module"));
   const groups = groupsFor(module);
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const sync = () => setUser(getUser());
     sync();
     window.addEventListener("dsr-auth-change", sync);
     window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener("dsr-auth-change", sync);
-      window.removeEventListener("storage", sync);
-    };
+    return () => { window.removeEventListener("dsr-auth-change", sync); window.removeEventListener("storage", sync); };
   }, []);
+  useEffect(() => setOpen(false), [pathname, searchParams]);
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [open]);
 
-  useEffect(() => setMobileOpen(false), [pathname]);
-
-  const logout = () => {
-    clearSession();
-    setUser(null);
-    router.push("/dashboard");
+  const active = (href: string) => {
+    const [path, query] = href.split("?");
+    if (path !== pathname) return false;
+    if (!query) return true;
+    return storageModule(new URLSearchParams(query).get("module") || "ALL") === storageModule(searchParams.get("module") || "ALL");
   };
+  const logout = () => { clearSession(); setUser(null); router.push("/dashboard"); };
+  const allItems = groups.flatMap(group => group.items);
+  const quickHrefs = module === "FMIR"
+    ? ["/fmir", "/stand-area", "/operations", "/inventory", "/activity"]
+    : module === "PLANT" ? ["/dashboard", "/fmir", "/rmir", "/reliability", "/system-status"]
+    : allItems.slice(0, 5).map(item => item.href);
+  const quickItems = quickHrefs.map(href => allItems.find(item => item.href === href)).filter((item): item is NavItem => !!item);
 
-  return (
-    <>
-      <header className="app-topnav">
-        <div className="app-topnav-inner">
-          <Brand />
-          <div className="desktop-module"><ModulePicker module={module} /></div>
-          <Link href="/dashboard" className="home-nav"><Home className="w-4 h-4" /> Platform</Link>
-          <nav className="desktop-groups" aria-label={`${module} navigation`}>
-            {groups.map((group) => <GroupMenu key={group.name} group={group} pathname={pathname} />)}
-          </nav>
-          <div className="nav-account">
-            {user ? (
-              <button onClick={logout} className="account-action"><LogOut className="w-4 h-4" /> Sign out</button>
-            ) : (
-              <Link href="/login" className="account-action"><LogIn className="w-4 h-4" /> Sign in</Link>
-            )}
-          </div>
-          <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
-            <Menu className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+  const panel = <>
+    <Link href="/dashboard" className="ati-brand" aria-label="Asset Tracking Intelligence plant home">
+      <span className="ati-brand-mark"><Factory size={19} /></span>
+      <span><b>Asset Tracking<br />Intelligence</b><small>Plant-wide maintenance</small></span>
+    </Link>
+    <label className="ati-register-picker">Equipment register
+      <select value={module} onChange={event => { const target = MODULES.find(item => item.code === event.target.value); if (target) router.push(target.href); }}>
+        {MODULES.map(item => <option key={item.code} value={item.code}>{item.code === "PLANT" ? "Plant overview" : `${item.code} · ${item.label}`}</option>)}
+      </select>
+    </label>
+    <div className="ati-navigation-scroll">
+      {groups.map(group => <section key={group.name} className="ati-navigation-group">
+        <h2>{group.name}</h2>
+        <nav aria-label={`${module} ${group.name}`}>
+          {group.items.map(item => { const Icon = item.icon; return <Link key={item.href} href={item.href} aria-current={active(item.href) ? "page" : undefined} className={`ati-nav-item ${active(item.href) ? "ati-nav-active" : ""}`}><Icon className="h-4 w-4" /><span>{item.name}</span></Link>; })}
+        </nav>
+      </section>)}
+    </div>
+    <div className="ati-sidebar-account">
+      <Link href="/dashboard" className="ati-nav-item"><Factory size={16} /><span>Plant overview</span></Link>
+      {user ? <button onClick={logout} className="ati-nav-item"><LogOut size={16} /><span>Sign out · {user.username}</span></button> : <Link href="/login" className="ati-nav-item"><LogIn size={16} /><span>Viewer mode · Sign in</span></Link>}
+    </div>
+  </>;
 
-      {mobileOpen && (
-        <div className="mobile-nav-overlay" onClick={() => setMobileOpen(false)}>
-          <aside className="mobile-drawer" onClick={(event) => event.stopPropagation()}>
-            <div>
-              <div className="drawer-head">
-                <Brand />
-                <button onClick={() => setMobileOpen(false)} className="drawer-close" aria-label="Close navigation"><X className="w-5 h-5" /></button>
-              </div>
-              <ModulePicker module={module} onNavigate={() => setMobileOpen(false)} />
-              <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="mobile-platform-link"><Home className="w-4 h-4" /> Platform Home</Link>
-              <div className="mobile-group-list">
-                {groups.map((group) => <GroupMenu key={group.name} group={group} pathname={pathname} onNavigate={() => setMobileOpen(false)} />)}
-              </div>
-            </div>
-            <div className="drawer-account">
-              {user ? (
-                <button onClick={logout} className="account-action"><LogOut className="w-4 h-4" /> Sign out</button>
-              ) : (
-                <Link href="/login" onClick={() => setMobileOpen(false)} className="account-action"><LogIn className="w-4 h-4" /> Sign in</Link>
-              )}
-            </div>
-          </aside>
-        </div>
-      )}
-    </>
-  );
+  return <>
+    <aside className="ati-desktop-sidebar" aria-label="Workspace navigation">{panel}</aside>
+    <header className="ati-mobile-topbar">
+      <button className="ati-menu-button" aria-label="Open navigation" aria-expanded={open} onClick={() => setOpen(true)}><Menu size={20} /></button>
+      <div><b>{module === "PLANT" ? "Asset Tracking Intelligence" : MODULES.find(item => item.code === module)?.label}</b><small>{module === "PLANT" ? "Whole plant" : `${module} · Equipment register`}</small></div>
+    </header>
+    {open && <div className="ati-mobile-overlay" onClick={() => setOpen(false)}>
+      <aside className="ati-mobile-drawer" aria-label="Mobile workspace navigation" onClick={event => event.stopPropagation()}>
+        <button className="ati-drawer-close" aria-label="Close navigation" onClick={() => setOpen(false)}><X size={20} /></button>
+        {panel}
+      </aside>
+    </div>}
+    <nav className="ati-mobile-bottom" aria-label="Quick navigation" style={{ gridTemplateColumns: `repeat(${quickItems.length}, minmax(0, 1fr))` }}>
+      {quickItems.map(item => { const Icon = item.icon; return <Link key={item.href} href={item.href} aria-current={active(item.href) ? "page" : undefined}><Icon className="h-4 w-4" /><span>{item.name}</span></Link>; })}
+    </nav>
+  </>;
 }

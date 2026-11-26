@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Install dependencies and reconcile the existing lockfile
         run: npm install --legacy-peer-deps --no-audit --no-fund
-      - name: Build Next.js application
+      - name: Verify plant and equipment navigation\n        run: npm run check:navigation\n      - name: Build Next.js application
         run: npm run build
       - name: Verify frontend Docker image
         working-directory: .

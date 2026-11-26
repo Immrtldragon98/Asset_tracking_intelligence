@@ -1,12 +1,13 @@
 {
-  "name": "digital-stand-register-frontend",
+  "name": "asset-tracking-intelligence-frontend",
   "version": "2.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check:navigation": "node scripts/check-navigation.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",

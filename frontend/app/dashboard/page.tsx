@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import FinishingMillStatus from "@/components/register/FinishingMillStatus";
 import {
   ArrowRight, ClipboardCheck, Factory, Wrench, CalendarClock,
   History, Cpu, Zap, Boxes, ClipboardList, Gauge,
@@ -8,19 +9,19 @@ import {
 } from "lucide-react";
 
 const tasks = [
-  { title: "Record a stand change", description: "Capture a stand change or entry-guide replacement.", href: "/rmir/stand-change", icon: Wrench, label: "SHOPFLOOR RECORD" },
+  { title: "Record a stand change", description: "Open FMIR to record finishing-mill stand and entry-guide changes.", href: "/operations", icon: Wrench, label: "SHOPFLOOR RECORD" },
   { title: "Update an asset", description: "Record a motor, drive or critical-component change.", href: "/mir", icon: Cpu, label: "ASSET REGISTER" },
-  { title: "Check equipment status", description: "Review stand and equipment records by mill.", href: "/dsir", icon: ClipboardCheck, label: "EQUIPMENT STATUS" },
+  { title: "Check equipment status", description: "Review stand and equipment records by mill.", href: "/fmir", icon: ClipboardCheck, label: "EQUIPMENT STATUS" },
   { title: "Find lifecycle history", description: "Trace component installations, removals and service life.", href: "/reliability", icon: History, label: "RELIABILITY" },
   { title: "Coordinate maintenance", description: "Review planned jobs and organise maintenance windows.", href: "/maintenance", icon: CalendarClock, label: "MAINTENANCE" },
 ];
 
 const registers = [
-  { code: "DSIR", name: "Finishing mill", detail: "Stand status, stand area, entry guides and spare life.", href: "/dsir", icon: Factory },
+  { code: "FMIR", name: "Finishing mill · DSR", detail: "Stand status, stand area, entry guides and spare life.", href: "/fmir", icon: Factory },
   { code: "RMIR", name: "Roughing mill", detail: "Stand changes, running stands and entry guides.", href: "/rmir", icon: Boxes },
   { code: "MIR", name: "Motors", detail: "Motor records, installation details and change history.", href: "/mir", icon: Cpu },
   { code: "DIR", name: "Drives", detail: "Drive inventory, equipment records and alerts.", href: "/dir", icon: Zap },
-  { code: "SSIR", name: "Critical assets", detail: "Screw shafts, lubrication and hydraulic pumps.", href: "/ssir", icon: ShieldCheck },
+  { code: "SSIR", name: "Screw shafts", detail: "Screw-shaft records, component lifecycle and maintenance.", href: "/ssir", icon: ShieldCheck },
 ];
 
 export default function DashboardPage() {
@@ -29,14 +30,16 @@ export default function DashboardPage() {
       <div className="command-wrap">
         <section className="command-hero" aria-labelledby="command-title">
           <div className="command-eyebrow"><Activity className="h-3.5 w-3.5" /> Plant maintenance workspace</div>
-          <h1 id="command-title">Asset intelligence.<br />Built for the shopfloor.</h1>
-          <p>One workspace for equipment records, component lifecycle, maintenance coordination and reliability history. Start with the job in front of you.</p>
+          <h1 id="command-title">Plant equipment overview</h1>
+          <p>Asset Tracking Intelligence covers the whole plant. Open an equipment register for its status, operations, maintenance and history. FMIR is your existing Digital Stand Register for the Finishing Mill.</p>
           <div className="command-hero-tags">
             <span><Factory className="h-3.5 w-3.5" /> WRM equipment registers</span>
             <span><History className="h-3.5 w-3.5" /> Traceable change history</span>
             <span><ShieldCheck className="h-3.5 w-3.5" /> Engineer-reviewed records</span>
           </div>
         </section>
+
+        <section className="command-section" aria-label="Finishing Mill overview"><FinishingMillStatus compact /></section>
 
         <section className="command-section" aria-labelledby="actions-title">
           <div className="command-section-head">

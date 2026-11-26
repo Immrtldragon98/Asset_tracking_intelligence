@@ -1,49 +1,18 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import WorkspaceBar from "@/components/layout/WorkspaceBar";
 
-const DSIR_PATHS = [
-  "/dashboard",
-  "/dsir",
-  "/running-stands",
-  "/stand-area",
-  "/operations",
-  "/pm-schedule",
-  "/maintenance",
-  "/reliability",
-  "/inventory",
-  "/activity",
-  "/entry-guides",
-  "/reports",
-  "/import-report",
-  "/historical-import",
-  "/planning",
-  "/system-status",
-  "/intelligence",
-  "/investigation",
-  "/knowledge",
-  "/alerts",
-  "/users",
-];
-
-const matches = (pathname: string, path: string) =>
-  pathname === path || pathname.startsWith(path + "/");
+const PUBLIC_PATHS = ["/login"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  const showNavigation =
-    DSIR_PATHS.some((path) => matches(pathname, path)) ||
-    ["/rmir", "/mir", "/dir", "/ssir"].some((path) => matches(pathname, path));
-
-  return showNavigation ? (
-    <div className="min-h-screen">
-      <Sidebar />
-      <main className="app-shell-content"><WorkspaceBar />{children}</main>
-    </div>
-  ) : (
-    <div className="min-h-screen">{children}</div>
-  );
+  if (PUBLIC_PATHS.includes(pathname)) return <div className="min-h-screen">{children}</div>;
+  return <div className="ati-shell">
+    <a className="ati-skip-link" href="#workspace-content">Skip to workspace</a>
+    <Suspense fallback={<div className="h-16" />}><Sidebar /></Suspense>
+    <div className="app-shell-content"><WorkspaceBar /><div id="workspace-content" tabIndex={-1}>{children}</div></div>
+  </div>;
 }

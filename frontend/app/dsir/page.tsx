@@ -1,2 +1,4 @@
 import { redirect } from "next/navigation";
-export default function DSIRPage(){ redirect("/stand-area"); }
+
+// Keep existing bookmarks; FMIR is the existing Digital Stand Register.
+export default function DSIRPage() { redirect("/fmir"); }
