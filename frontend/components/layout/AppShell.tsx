@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import WorkspaceBar from "@/components/layout/WorkspaceBar";
 
+import PlantAssistant from "@/components/assistant/PlantAssistant";
+
 const PUBLIC_PATHS = ["/login"];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -14,5 +16,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     <a className="ati-skip-link" href="#workspace-content">Skip to workspace</a>
     <Suspense fallback={<div className="h-16" />}><Sidebar /></Suspense>
     <div className="app-shell-content"><WorkspaceBar /><div id="workspace-content" tabIndex={-1}>{children}</div></div>
+    <PlantAssistant />
   </div>;
 }

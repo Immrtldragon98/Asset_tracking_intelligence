@@ -5,6 +5,12 @@ from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.models.asset_registry import AssetRegistry
 from app.services.groq_ai import ask_groq
+from app.auth.dependencies import get_current_user
+from app.models.user import User
+from app.services.dashboard_service import DashboardService
+import json
+import os
+import requests
 
 router = APIRouter()
 
@@ -47,9 +53,13 @@ def _asset_context(asset: AssetRegistry, db: Session) -> str:
 
 
 @router.post("/chat", response_model=AssistantResponse)
-def chat(request: AssistantRequest, db: Session = Depends(get_db)):
+def chat(request: AssistantRequest, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     model = __import__("os").getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
-    context = request.context
+    snapshot = DashboardService(db).get_plant_dashboard()
+    plant_context = json.dumps(snapshot, default=str)
+    context = "Current recorded installations (elapsed campaign time is not verified operating runtime):\n" + plant_context
+    if request.context:
+        context += "\nUser-supplied context (unverified):\n" + request.context
 
     if request.asset_code:
         asset = (
@@ -64,8 +74,14 @@ def chat(request: AssistantRequest, db: Session = Depends(get_db)):
             f"{context}\n\n" if context else ""
         ) + "Asset relationship context:\n" + relationship_context
 
+    if not os.getenv("GROQ_API_KEY"):
+        raise HTTPException(503, "AI assistant needs a server-side GROQ_API_KEY. Plant data remains available on the dashboard.")
+    try:
+        answer = ask_groq(request.question, context)
+    except (requests.RequestException, RuntimeError, ValueError):
+        raise HTTPException(503, "AI provider is temporarily unavailable. Please retry shortly.")
     return {
-        "answer": ask_groq(request.question, context),
+        "answer": answer,
         "model": model,
         "asset_code": request.asset_code.upper() if request.asset_code else None,
     }
